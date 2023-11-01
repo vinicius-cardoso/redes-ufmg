@@ -1,0 +1,358 @@
+Introdução:
+Neste trabalho vamos implementar o DCCRIP, um protocolo simples de roteamento,
+seguindo o algoritmo de Vetor de Distâncias.
+
+Objetivo:
+Seu objetivo será criar o programa que operará como um roteador usando links
+"virtuais" que se ligará a outros iguais a ele e executará o algoritmo de vetor
+de distâncias para encontrar caminhos.
+
+Princípio de operação:
+Você deve desenvolver o roteador do RCRIP, que vai implementar uma rede
+sobreposta (overlay) que vai funcionar sobre a internet. A ideia é que
+programas RCRIP ligados uns aos outros sejam capazes de criar uma rede com
+roteamento próprio, onde cada programa pode enviar mensagens para os demais aos
+quais estiver "conectado", seguindo as rotas definidas internamente entre eles.
+As mensagens vão acabar passando pela internet, mas vão sempre seguir de um
+programa para outro dentro da rede criada pelos programas RCRIP.
+
+Cada roteador vai receber mensagens através de um socket UDP que vai permitir
+que ele se comunique com seus vizinhos e receba mensagens de comando de um
+programa de interface (que será fornecido). As mensagens de comando servirão
+para descrever como os roteadores se conectarão uns aos outros, permitindo que
+canais virtuais sejam ligados ou desligados (afetando as rotas disponíveis).
+Entre si, os roteadores deverão ser capazes de enviar mensagens com informações
+sobre rotas conhecidas e as mensagens que  deverão ser roteadas pela rede
+virtual.
+
+Cada roteador será conhecido na rede por um nome definido ao se disparar os
+programas. As rotas serão então montadas em função desses nomes: a tabela de
+roteamento manterá, para cada destino (nome de um roteador) o identificador
+do próximo passo (nome de um roteador vizinho que faz parte do caminho até o
+destino). Nomes serão strings de até 32 caracteres. Como a comunicação deverá
+ocorrer pela rede, cada nome terá que ser associado a um endereço IP e um
+número de porto, que serão usados para endereçar as mensagens pela internet,
+usando o protocolo UDP.
+
+Funcionamento dos roteadores:
+Cada programa roteador receberá como parâmetros de linha de comando primeiro um
+string de até 32 caracteres, sem espaços, que será o identificador do roteador
+e em seguida um string que identificará um arquivo de configuração que deve ser
+lido antes do roteador poder começar a processar mensagens. Cada linha desse
+arquivo conterá três informaçõs separadas por espaços: o nome de um roteador, o
+endereço IP ou nome da máquina onde aquele roteador executa e o número do porto
+que ele usa. Por exemplo:
+
+vulcan 150.164.4.47 11111
+risa localhost 4321
+kronos amazonas.grad.dcc.ufmg.br 6666
+
+O roteador deve então montar um dicionário interno que mapeie os nomes para os
+pares (endereço,porto). Você pode criar um dicionário de endereços e outro de
+portos ou, usando o fato de Python processar listas, criar um dicionário onde
+cada posição é o par (end.,porto) - por exemplo, endereco['vulcan'] =
+('150.164.4.47',11111) cria um entrada no dicionário e o valor retornado por
+endereco['vulcan'] é o par ('150.164.4.47',11111), de forma que ele pode ser
+usado diretamente como o parâmetro de endereço em uma chamada da função
+sendto(), por exemplo.
+
+Os roteadores criarão "canais virtuais" com outros roteadores ao receberem
+mensagens de comando que serão geradas pelo programa de controle que será
+fornecido. Ao executarem o protocolo de roteamento, eles construirão tabelas de
+roteamento que deverão conter três colunas: roteador de destino, próximo passo,
+distância. Como no RIP, a distância entre roteadore vizinhos é um. Assim, se
+vulcan é vizinho de risa e risa é vizinho de kronos, mas vulcan e kronos não
+são vizinhos diretos, a tabela de roteamento de vulcan conteria as linhas
+
+vulcan vulcan 0
+risa risa 1
+kronos risa 2
+
+Quando for iniciado, depois de ler o arquivo de entereços, cada roteador deve
+esperar por mensagens no porto associado ao seu nome na lista de endereços e
+processá-las adequadamente. Depois que receber um comando de disparo da rede,
+ele deve também periodicamente enviar mensagens do protocolo de roteamento para
+seus vizinhos.
+
+Mensagens de controle:
+Cada roteador deve reconhecer e processar as seguintes mensagens:
+- conexão: formada por um caractere 'C' seguido do nome de um roteador, informa
+ao roteador que a recebe que o roteador identificado na mensagem passa a ser
+seu vizinho;
+- desconexão: formada por um caractere 'D' seguido do nome de um roteador,
+informa ao roteador que ele deve remover o roteador identificado da sua lista
+de vizinhos;
+- tabela: composta apenas por um caractere 'T', comanda o roteador a imprimir
+na sua saída padrão a sua tabela de roteamento;
+- envio: formada pelo caractere 'E' seguido do nome de um roteador de destino,
+seguido de um string de até 64 bytes contendo um texto qualquer, informa ao
+roteador que ele deve enviar o texto para o roteador de destino;
+- início: composta apenas por um caractere 'I', indica que a partir daquele
+momento o roteador deve iniciar o envio periódico das informações do algoritmo
+de vetor de distâncias para seus vizinhos.
+
+Os comandos de conexão, desconexão e início não devem produzir qualquer tipo de
+mensagem na saída padrão do programa. A tabela de roteamento deve ser escrita
+sem formatação especial: cada linha da tabela deve ser escrita começando com o
+caractere 'T', seguido pelos nomes dos dois roteadores e a distância até o
+destino, separados por espaços, nada mais. Já o comando de envio deve gerar a
+impressão de uma linha com um de dois formatos possíveis: se o roteador que
+recebe a mensagem é o roteador de destino, ele deve escrever o caracter 'R',
+seguido do texto da mensagem; caso contrário, ele deve escrever o caractere
+'E', o nome do destino, o texto da mensgem e o nome do roteador identificado
+como próximo passo, antes de realmente enviar a mensagem para o próximo passo.
+
+O protocolo de roteamento:
+O protocolo de roteamento é o foco deste trabalho e deve ser implementado,
+inclusive com a definição do formato das mensagens que serão usadas (pelo menos
+um tipo mensagem deve ser criado). Para viabilizar o funcionamento junto com as
+mensagens de controle já definidas, cada tipo de mensagem deve iniciar com um
+caractere diferente de 'C', 'D', 'T', 'E' e 'I'. Cada mensagem deve incluir o
+nome do roteador que a envia, para simplificar o processamento pelo roteador
+que a recebe, e o vetor de distâncias informado pelo roteador que a envia.
+
+Como o número de linhas da tabela de rotas é variável, minha recomendação é que
+a mensagem inclua primeiro o número de posições do vetor de distâncias, seguido
+pela informação de cada destino. Para montar a mensagem UDP completa, pode-se
+usar pack() e a operação de  ligação de vetores de bytes (simplesmente o
+operador '+'). Para desmontar a mensagem, certamente isso vai ter que ser feito
+por partes. Para isso, é preciso usar os operadores de Python para manipular
+apenas parte de um vetor, já que cada unpack deve receber um vetor do tamanho
+certo para o formato que vai ser usado; para iterar pela lista, basta ir
+descartando a parte do vetor que já foi utilizada. Um exemplo disso pode ser
+encontrado nesse post do stack overflow.
+
+O intervalo entre mensagens de divulgação do vetor de distâncias de cada
+roteador deve ser configurado como um parâmetro facilmente alterável no código.
+A princípio, um intervalo de 1 segundo entre mensagens é satisfatório.
+
+Programa de controle:
+Para simplificar a implementação em função do prazo limitado, o programa de
+controle que deverá ser usado para programar os roteadores, gerando as
+mensagens definidas anteriormente, está disponível no moodle. Uma análise do
+código deve ser suficiente para entender seu funcionamento, mas a ideia é
+basicamente que ele vai ler do teclado comandos do tipo conexão, desconexão,
+etc., montar as mensagens necessárias e enviá-las para os roteadores
+apropriados. Com isso, partes do código, como a leitura do arquivo de endereços
+dos roteadores e a montagem das mensagens de controle já serão fornecidos. Esse
+programa não pode ser alterado, exceto com a autorização do professor, pois ele
+não será incluído na entrega.
+
+ATENÇÃO: vocês podem até alterar o programa de controle para facilitar algum
+tipo de teste durante o seu desenvolvimento, mas certifique-se de que seu
+programa roteador funciona corretamente com o programa de controle como
+fornecido, pois ele será o programa usado durante a avaliação.O tratamento de
+temporizações em um programa
+
+Para executar periodicamente o envio de anúncios para os vizinhos, a
+implementação pode utilizar usar temporizações regulares usando a interface
+Timer do pacote threading - threading.Timer(). Para repetir uma temporização
+continuamente, a solução mais simples é criar um novo timer a cada vez que o
+timer é disparado. Na web é possível encontrar soluções mais elegantes, caso
+queiram experimentar.
+
+Sobre a execução dos programas:
+O código deve usar apenas Python 3, sem bibliotecas além das consideradas
+padrão. O material desenvolvido por você deve executar sem erros nas máquinas
+linux.
+
+O que deve ser entregue:
+Você deve entregar apenas um arquivo roteador.py contendo todo o código do
+roteador implementado. Como não será exigido um relatório, o código deve ser
+bem comentado para indicar todas as decisões de projeto relevantes.
+
+controle_teste.py:
+"""
+# Este é um programa simples que mostra como receber as mensagens enviadas
+# pelo programa de controle do TP2, até para confirmar que ele está
+# enviando as mensagens corretamente. 
+# Ele espera receber como parâmetro o porto onde deve receber as mensagens.
+# Considerando que o arquivo roteadores.txt distribuído com o código seja
+# usado, ele define que o roteador terra executará na máquina local, no
+# porto 5555. Dessa forma, se você iniciar este programa com o parâmetro
+# 5555, ele vai se comportar como o roteador denominado terra.
+# 
+# Note que, segundo o enunciado do TP2, o roteador vai receber seu nome e o
+# nome do arquivo com os roteadores, aí ele poderá extrair da informação do
+# arquivo o número do porto que ele deverá usar.
+# 
+# DICA: o código do programa de controle já tem o exemplo de como o arquivo
+# de roteadores deve ser processado.
+
+import socket
+import sys
+from socket import AF_INET, SOCK_DGRAM
+from struct import *
+
+# Essas funções "extrai" retiram as informações da mensagem recebida.
+# Para mostrar como extrair partes quaisquer de um vetor de bytes,
+# elas são mais complexas do que precisava, incluindo a posição do vetor
+# a partir da qual elas vão extrair os dados (i)
+
+def extrai_roteador(msg,i):
+    r = unpack(">32s",msg[i:i+32]) 
+    return r[0].decode()
+
+def extrai_destino_texto(msg,i):
+    l = unpack(">32s64s",msg[i:i+96]) # 96 = 32 + 64
+    destino = l[0].decode()
+    texto   = l[1].decode()
+    return destino, texto
+
+# Atenção: quando for necessário ir decodificando as diversas linhas
+#          de um vetor de distâncias, é importante usar o recurso
+#          de python de selecionar faixas de um vetor de bytes:
+#          p.ex., vetor[i:i+32] indica os 32 bytes a partir da posição i.
+
+server_socket = socket.socket(AF_INET, SOCK_DGRAM)
+server_port = int(sys.argv[1])
+server_socket.bind(('',server_port))
+while(True):
+    msg, addr_from = server_socket.recvfrom(1024)
+    # print(msg, addr_from)
+    c = unpack(">c",msg[0:1])
+    comando = c[0].decode()
+    if comando=='C' or comando=='D':
+        roteador = extrai_roteador(msg,1)
+        print(comando, roteador)
+    elif comando=='E':
+        destino, texto = extrai_destino_texto(msg,1)
+        print("%s %s '%s'" % (comando, destino, texto) )
+    elif comando=='T' or comando=='I':
+        print(comando)
+    else:
+        print("Comando não reconhecido")     
+"""
+
+controle.py:
+"""
+# Programa a ser usado para controlar os roteadores desenvolvidos para o TP2.
+# 
+# Ele deve ser iniciado com apenas um argumento, que será o nome do arquivo
+# contendo a identificação dos roteadores a serem usados.
+# Junto com esse código você encontrará o arquivo roteadores.txt, que tem 
+# a definição de quatro roteadores, sendo que os dois primeiros usam
+# endereços IP ou nomes de máquinas específicas, o que seria usado se o
+# TP for testado usando programas executando em mais de uma máquina.
+# Os dois últimos indicam programas executando no localhost e poderiam ser
+# usados como dois programas de teste, executando nas portas 55555 e 54321
+# da máquina local.
+# 
+# Para usar o programa com o arquivo de roteadores fornecido, bastaria
+# passar "roteadores.txt" como parâmetro.
+
+import socket
+from struct import *
+import sys
+
+from socket import AF_INET, SOCK_DGRAM
+
+socket = socket.socket(AF_INET, SOCK_DGRAM)
+socket.bind(('',0))
+
+addr = {}
+
+def roteadores_ok(roteadores):
+    arguments_status = True
+    for roteador in roteadores:
+        if roteador not in addr:
+            arguments_status = False
+            print("Roteador %s não definido" % (roteador))
+    return arguments_status
+
+
+def adiciona_link(argv):
+    roteadores = argv.split(' ')
+    if len(roteadores) != 2 or not roteadores_ok(roteadores):
+        print("Adiciona link deve ter 2 roteadores validos")
+        return
+    print("Adiciona link entre",roteadores[0],"e",roteadores[1])
+    msg = pack(">c32s",'C'.encode(),roteadores[0].encode())
+    socket.sendto(msg,addr[roteadores[1]])
+    msg = pack(">c32s",'C'.encode(),roteadores[1].encode())
+    socket.sendto(msg,addr[roteadores[0]])
+
+def remove_link(argv):
+    roteadores = argv.split(' ')
+    if len(roteadores) != 2 or not roteadores_ok(roteadores):
+        print("Remove link deve ter 2 roteadores validos")
+        return
+    print("Remove link entre",roteadores[0],"e",roteadores[1])
+    msg = pack(">c32s",'D'.encode(),roteadores[0].encode())
+    socket.sendto(msg,addr[roteadores[1]])
+    msg = pack(">c32s",'D'.encode(),roteadores[1].encode())
+    socket.sendto(msg,addr[roteadores[0]])
+
+def mostra_tabela(argv):
+    roteador=argv.split(' ')
+    if len(roteador)!=1 or not roteadores_ok(roteador):
+        print("Mostra tabela deve ter 1 roteador")
+        return
+    msg = pack(">c",'T'.encode())
+    socket.sendto(msg,addr[roteador[0]])
+
+def inicia_rcrip(argv):
+    if argv!='':
+        print("Inicia RCRIP não espera argumentos")
+        return
+    msg = pack(">c",'I'.encode())
+    for roteador in addr:
+        socket.sendto(msg,addr[roteador])
+
+def envia_texto(argv):
+    origem, destino, texto = argv.split(' ',2)
+    print("Envia '%s' para %s a partir de %s" % (texto, destino, origem) )
+    if not roteadores_ok((origem,destino)):
+        return
+    if texto == '':
+        print("Texto não fornecido")
+        return
+    msg = pack(">c32s64s",'E'.encode(),destino.encode(),texto.encode())
+    socket.sendto(msg,addr[origem])
+
+comandos = {'A': adiciona_link,
+           'R': remove_link,
+           'T': mostra_tabela,
+           'I': inicia_rcrip,
+           'E': envia_texto,
+}
+
+if len(sys.argv) != 2:
+    print("Uso:",sys.argv[0],"nome_arquivo")
+    exit(1)
+
+f = open(sys.argv[1],'r')
+roteadores = f.readlines()
+for roteador in roteadores:
+    rname,rhost,rport  = roteador.split(' ')
+    addr[rname] = (rhost,int(rport))
+    print("(",rname,"->",addr[rname],")")
+
+while(True):
+    try:
+        line = input()
+    except EOFError:
+        break
+    if line == '':
+        continue
+    
+    ls = line.split(' ',1)
+    comando = ls[0]
+    if len(ls) == 1:
+        argumentos = ''
+    else:
+        argumentos = ls[1]
+    comando = comando.rstrip().upper()
+    if comando not in comandos:
+        print("Comando desconhecido:",comando)
+        continue
+    comandos[comando](argumentos)
+"""
+
+roteadores.txt:
+"""
+vulcan 150.164.4.47 11111
+kronos amazonas.grad.dcc.ufmg.br 6666
+risa 127.0.0.1 54321
+terra localhost 55555
+"""
