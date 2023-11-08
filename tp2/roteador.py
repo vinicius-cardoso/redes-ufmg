@@ -2,6 +2,7 @@ import sys
 import time
 import socket
 import threading
+from struct import pack, unpack
 
 class Roteador:
     def __init__(self, nome_roteador, arquivo_config):
@@ -36,19 +37,20 @@ class Roteador:
             raise UnicodeDecodeError
     
     def executa_configuracao(self, pacote, endereco):
-        
-        match pacote.decode()[0]:
+        (config, argumento) = unpack(">c32s", pacote)
+        match config:
             case 'C':
-                
+                pass
             case 'D':
-                
+                pass
             case 'T':
-                
+                pass
             case 'E':
-                
+                pass
             case 'I':
-                
-        pass
+                pass
+            case _:
+                pass
     
     def eh_pacote_de_dados(self, pacote):
         try:
