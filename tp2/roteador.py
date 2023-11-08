@@ -7,6 +7,7 @@ from struct import pack, unpack
 class Roteador:
     def __init__(self, nome_roteador, arquivo_config):
         self.nome_roteador = nome_roteador
+        self.roteadores_na_rede = {}
         self.vizinhos = {}
         self.tabela_roteamento = {}
         self.carregar_config(arquivo_config)
@@ -21,11 +22,11 @@ class Roteador:
                     self.ip_roteador = ip
                     self.porta_roteador = int(porta)
                 else:
-                    self.vizinhos[nome] = (ip, int(porta))
+                    self.roteadores_na_rede[nome] = (ip, int(porta))
 
     def lidar_com_pacote(self, pacote, endereco):
         if self.eh_pacote_de_configuracao(pacote):
-            self.executa_configuracao(self, pacote, endereco)
+            self.executa_configuracao(self, pacote)
         elif self.eh_pacote_de_dados(pacote):
             self.trata_pacote_de_dados(self, pacote, endereco)
         pass
@@ -35,17 +36,32 @@ class Roteador:
             return pacote.decode()[0] in 'CDTEI'
         except:
             raise UnicodeDecodeError
+
+    def extrai_prox_passo(self, destino): # depois a gente organiza as funções
+        for linha in self.tabela_roteamento:
+            destino_tabela, prox_passo, distancia = linha.strip().split()
+            if destino == destino_tabela:
+                return prox_passo
+            
+    def envia_pela_tabela(self, msg, destino):
+        msg = msg + " " + destino
+        self.socket.sendto(msg, self.extrai_prox_passo(destino))
     
-    def executa_configuracao(self, pacote, endereco):
-        (config, argumento) = unpack(">c32s", pacote)
+    def executa_configuracao(self, pacote):
+        config = unpack(">c", pacote[0])
+        roteador_referido = unpack(">32s", pacote[1:33])
         match config:
             case 'C':
-                pass
+                self.vizinhos[roteador_referido] = self.roteadores_na_rede[roteador_referido]
             case 'D':
-                pass
+                self.vizinhos.pop(roteador_referido)
             case 'T':
-                pass
+                for linha in self.tabela_roteamento:
+                    destino, prox_passo, distancia = linha.strip().split()
+                    print('T' + destino + prox_passo + str(distancia))
             case 'E':
+                msg = pacote[33:97]
+                self.envia_pela_tabela(msg, roteador_referido)
                 pass
             case 'I':
                 pass

@@ -368,7 +368,7 @@ mensagens que devem ser roteadas pela rede virtual. Cada roteador é conhecido n
 um nome definido ao se disparar os programas. As rotas são, então, montadas em função
 desses nomes: a tabela de roteamento mantém, para cada destino (nome de um roteador) o
 identificador do próximo passo (nome de um roteador vizinho que faz parte do caminho até
-o destino). Nomes são strings de até 32 caracteres. Como a comunicação deve ocorrer pela
+o destino) e a distancia até o destino. Nomes são strings de até 32 caracteres. Como a comunicação deve ocorrer pela
 rede, cada nome deve ser associado a um endereço IP e um número de porto, que são
 usados para endereçar as mensagens pela internet, usando o protocolo UDP. Cada programa
 executado deve receber, como parâmetros, nesta ordem: uma string de até 32 caracteres,
