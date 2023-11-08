@@ -25,26 +25,25 @@ class Roteador:
                     self.roteadores_na_rede[nome] = (ip, int(porta))
 
     def lidar_com_pacote(self, pacote, endereco):
-        if self.eh_pacote_de_configuracao(pacote):
-            self.executa_configuracao(self, pacote)
-        elif self.eh_pacote_de_dados(pacote):
-            self.trata_pacote_de_dados(self, pacote, endereco)
-        pass
+        try:
+            if self.eh_pacote_de_configuracao(pacote):
+                self.executa_configuracao(self, pacote)
+            elif self.eh_pacote_de_dados(pacote):
+                self.trata_pacote_de_dados(self, pacote, endereco)
+        except:
+            pass
     
     def eh_pacote_de_configuracao(self, pacote):
-        try:
-            return pacote.decode()[0] in 'CDTEI'
-        except:
-            raise UnicodeDecodeError
+        return pacote.decode()[0] in 'CDTEI'
 
-    def extrai_prox_passo(self, destino): # depois a gente organiza as funções
+    def extrai_prox_passo(self, destino):
         for linha in self.tabela_roteamento:
             destino_tabela, prox_passo, distancia = linha.strip().split()
             if destino == destino_tabela:
                 return prox_passo
             
     def envia_pela_tabela(self, msg, destino):
-        msg = msg + " " + destino
+        msg = b"M" + msg + b" " + destino
         self.socket.sendto(msg, self.extrai_prox_passo(destino))
     
     def executa_configuracao(self, pacote):
@@ -64,18 +63,28 @@ class Roteador:
                 self.envia_pela_tabela(msg, roteador_referido)
                 pass
             case 'I':
-                pass
+                threading.Thread(target=self.iniciar_roteamento, daemon=True).start()
             case _:
                 pass
     
     def eh_pacote_de_dados(self, pacote):
-        try:
-            return not self.eh_pacote_de_configuracao()
-        except:
-            return False
+        return not self.eh_pacote_de_configuracao()
+    
+    def destinos_tabela_roteamento(self):
+        return [linha[0] for linha in self.tabela_roteamento]
+
     
     def trata_pacote_de_dados(self, pacote, endereco):
-        pass
+        # M: mensagem | R: roteamento
+        tipo = unpack(">c", pacote[0])
+        if tipo == 'M':
+            msg, destino = pacote[1:].rsplit(maxsplit=1)
+            if destino == self.nome_roteador:
+                print("R" + msg.decode())
+            elif destino in self.destinos_tabela_roteamento:
+                self.envia_pela_tabela(msg, destino)
+        elif tipo == 'R':
+            pass
 
     def executar(self):
         while True:
