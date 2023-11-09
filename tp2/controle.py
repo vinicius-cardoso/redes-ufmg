@@ -82,11 +82,12 @@ def envia_texto(argv):
     msg = pack(">c32s64s",'E'.encode(),destino.encode(),texto.encode())
     socket.sendto(msg,addr[origem])
 
-comandos = {'A': adiciona_link,
-           'R': remove_link,
-           'T': mostra_tabela,
-           'I': inicia_rcrip,
-           'E': envia_texto,
+comandos = {
+    'A': adiciona_link,
+    'R': remove_link,
+    'T': mostra_tabela,
+    'I': inicia_rcrip,
+    'E': envia_texto,
 }
 
 if len(sys.argv) != 2:
@@ -102,7 +103,7 @@ for roteador in roteadores:
 
 while(True):
     try:
-        line = input()
+        line = input("comando: ")
     except EOFError:
         break
     if line == '':
