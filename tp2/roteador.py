@@ -97,10 +97,13 @@ class Roteador:
 
             linhas = str(pacote[1:]).split('\n')
             for [destino, prox_passo, distancia] in linhas:
-                pass
-            """ - """
-                
-
+                if destino not in self.tabela_roteamento:
+                    self.tabela_roteamento[destino] = self.Caminho(prox_passo, distancia + 1)
+                elif self.tabela_roteamento[destino].prox_passo == origem:
+                    self.tabela_roteamento[destino] = (origem, distancia + 1)
+                else:
+                    self.tabela_roteamento[destino] = min(self.Caminho(prox_passo, distancia + 1), self.tabela_roteamento[destino])
+  
 
     def executar(self):
         while True:
