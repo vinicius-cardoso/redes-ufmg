@@ -76,7 +76,6 @@ class Roteador:
         if config == 'E':
             msg = pacote[34:99]
             self.envia_pela_tabela(msg, roteador_referido)
-            pass
         if config == 'I':
             threading.Thread(target=self.iniciar_roteamento, daemon=True).start()
 
@@ -105,13 +104,10 @@ class Roteador:
             linhas = pacote.splitlines()
             for linha in linhas:
                 [destino, prox_passo, distancia] = linha.decode().split()
-                if destino not in self.tabela_roteamento:
-                    self.tabela_roteamento[destino] = self.Caminho(origem, int(distancia) + 1)
-                elif self.tabela_roteamento[destino].prox_passo == origem:
+                if (destino not in self.tabela_roteamento) or (self.tabela_roteamento[destino].prox_passo == origem):
                     self.tabela_roteamento[destino] = self.Caminho(origem, int(distancia) + 1)
                 else:
                     self.tabela_roteamento[destino] = min(self.Caminho(prox_passo, int(distancia) + 1), self.tabela_roteamento[destino])
-  
 
     def executar(self):
         while True:
