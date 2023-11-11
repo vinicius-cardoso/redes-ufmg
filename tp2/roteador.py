@@ -50,13 +50,15 @@ class Roteador:
         return pacote.decode()[0] in 'CDTEI'
             
     def envia_pela_tabela(self, msg, destino):
-        msg = b"M" + msg + b" " + destino
-        self.socket.sendto(msg, self.tabela_roteamento[destino].prox_passo)
+        msg = b"M" + msg + b" " + destino.encode()
+        prox = self.tabela_roteamento[destino].prox_passo
+        endereco_prox = self.roteadores_na_rede[prox]
+        self.socket.sendto(msg, endereco_prox)
     
     def executa_configuracao(self, pacote):
         config = chr(pacote[0])
         if len(pacote) > 1:
-            roteador_referido = unpack(">32s", pacote[1:34])[0].rstrip(b'\x00').decode()
+            roteador_referido = unpack(">32s", pacote[1:33])[0].rstrip(b'\x00').decode()
         else:
             roteador_referido = 0
         match config:
@@ -72,7 +74,7 @@ class Roteador:
                 for destino, caminho in self.tabela_roteamento.items():
                     print("T", destino, caminho.prox_passo, caminho.distancia)
             case 'E':
-                msg = pacote[34:99]
+                msg = pacote[33:98]
                 self.envia_pela_tabela(msg, roteador_referido)
                 pass
             case 'I':
@@ -91,6 +93,7 @@ class Roteador:
         tipo = chr(pacote[0])
         if tipo == 'M':
             msg, destino = pacote[1:].rsplit(maxsplit=1)
+            destino = destino.decode()
             if destino == self.nome_roteador:
                 print("R", msg.decode())
             elif destino in self.destinos_tabela_roteamento():
@@ -105,7 +108,7 @@ class Roteador:
             for linha in linhas:
                 [destino, prox_passo, distancia] = linha.decode().split()
                 if destino not in self.tabela_roteamento:
-                    self.tabela_roteamento[destino] = self.Caminho(prox_passo, int(distancia) + 1)
+                    self.tabela_roteamento[destino] = self.Caminho(origem, int(distancia) + 1)
                 elif self.tabela_roteamento[destino].prox_passo == origem:
                     self.tabela_roteamento[destino] = self.Caminho(origem, int(distancia) + 1)
                 else:
