@@ -36,6 +36,7 @@ class Roteador:
                 if nome == self.nome_roteador:
                     self.ip_roteador = ip
                     self.porta_roteador = int(porta)
+                    self.tabela_roteamento[nome] = self.Caminho(nome, 0)
                 else:
                     self.roteadores_na_rede[nome] = (ip, int(porta))
 
@@ -69,7 +70,7 @@ class Roteador:
                         del self.roteadores_na_rede[roteador_referido]
             case 'T':
                 for destino, caminho in self.tabela_roteamento.items():
-                    print('T' + destino + caminho.prox_passo + str(caminho.distancia))
+                    print("T", destino, caminho.prox_passo, caminho.distancia)
             case 'E':
                 msg = pacote[34:99]
                 self.envia_pela_tabela(msg, roteador_referido)
@@ -91,11 +92,12 @@ class Roteador:
         if tipo == 'M':
             msg, destino = pacote[1:].rsplit(maxsplit=1)
             if destino == self.nome_roteador:
-                print("R" + msg.decode())
+                print("R", msg.decode())
             elif destino in self.destinos_tabela_roteamento():
                 self.envia_pela_tabela(msg, destino)
         elif tipo == 'R':
             origem, pacote = pacote[1:].split(maxsplit=1)
+            origem = origem.decode()
 
             self.tabela_roteamento[origem] = self.Caminho(origem, 1)
 
@@ -105,7 +107,7 @@ class Roteador:
                 if destino not in self.tabela_roteamento:
                     self.tabela_roteamento[destino] = self.Caminho(prox_passo, int(distancia) + 1)
                 elif self.tabela_roteamento[destino].prox_passo == origem:
-                    self.tabela_roteamento[destino] = self.Caminho(origem, distancia + 1)
+                    self.tabela_roteamento[destino] = self.Caminho(origem, int(distancia) + 1)
                 else:
                     self.tabela_roteamento[destino] = min(self.Caminho(prox_passo, int(distancia) + 1), self.tabela_roteamento[destino])
   
@@ -117,11 +119,12 @@ class Roteador:
 
     def formata_tabela_roteamento(self):
         msg = ''
-        for (destino, caminho) in self.tabela_roteamento.items():
-            """ """
-            print(destino, caminho.prox_passo)
-            linha = ' '.join([destino, caminho.prox_passo, str(caminho.distancia)])
-            msg += linha
+        try:
+            for (destino, caminho) in self.tabela_roteamento.items():
+                linha = ' '.join([destino, caminho.prox_passo, str(caminho.distancia)])
+                msg += linha + "\n"
+        except:
+            pass
         return msg
 
     def enviar_info_roteamento(self):
