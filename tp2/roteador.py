@@ -61,27 +61,25 @@ class Roteador:
             roteador_referido = unpack(">32s", pacote[1:33])[0].rstrip(b'\x00').decode()
         else:
             roteador_referido = 0
-        match config:
-            case 'C':
-                self.vizinhos[roteador_referido] = self.roteadores_na_rede[roteador_referido]
-                self.tabela_roteamento[roteador_referido] = self.Caminho(roteador_referido, 1)
-            case 'D':
-                self.vizinhos.pop(roteador_referido)
-                for caminho in self.tabela_roteamento.values():
-                    if caminho.prox_passo == roteador_referido:
-                        del self.roteadores_na_rede[roteador_referido]
-            case 'T':
-                for destino, caminho in self.tabela_roteamento.items():
-                    print("T", destino, caminho.prox_passo, caminho.distancia)
-            case 'E':
-                msg = pacote[33:98]
-                self.envia_pela_tabela(msg, roteador_referido)
-                pass
-            case 'I':
-                threading.Thread(target=self.iniciar_roteamento, daemon=True).start()
-            case _:
-                pass
-    
+        
+        if config == 'C':
+            self.vizinhos[roteador_referido] = self.roteadores_na_rede[roteador_referido]
+            self.tabela_roteamento[roteador_referido] = self.Caminho(roteador_referido, 1)
+        if config == 'D':
+            self.vizinhos.pop(roteador_referido)
+            for caminho in self.tabela_roteamento.values():
+                if caminho.prox_passo == roteador_referido:
+                    del self.roteadores_na_rede[roteador_referido]
+        if config == 'T':
+            for destino, caminho in self.tabela_roteamento.items():
+                print("T", destino, caminho.prox_passo, caminho.distancia)
+        if config == 'E':
+            msg = pacote[34:99]
+            self.envia_pela_tabela(msg, roteador_referido)
+            pass
+        if config == 'I':
+            threading.Thread(target=self.iniciar_roteamento, daemon=True).start()
+
     def eh_pacote_de_dados(self, pacote):
         return not self.eh_pacote_de_configuracao(pacote)
     
