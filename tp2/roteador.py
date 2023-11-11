@@ -11,132 +11,132 @@ class Roteador:
         self.vizinhos = {}            # [nome]: (IP, port)
         self.tabela_roteamento = {}   # [destino]: Caminho
         self.carregar_config(arquivo_config)
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.socket.bind((self.ip_roteador, self.porta_roteador))
-    
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # cria um socket UDP para
+        self.socket.bind((self.ip_roteador, self.porta_roteador))       # conecta ao roteador pelo ip e porta
+
     class Caminho:
         def __init__(self, prox, dist):
             self.prox_passo = prox
             self.distancia = dist
 
         def __lt__(self, other):
-            return self.distancia < other.distancia
+            return self.distancia < other.distancia     # retorna verdadeiro se a distancia do objeto for menor que a do outro
         
         def __gt__(self, other):
-            return self.distancia > other.distancia
+            return self.distancia > other.distancia     # retorna verdadeiro se a distancia do objeto for maior que a do outro
         
         def __eq__(self, other):
-            return self.distancia == other.distancia
-
+            return self.distancia == other.distancia    # retorna verdadeiro se a distancia do objeto for igual a do outro
 
     def carregar_config(self, arquivo_config):
-        with open(arquivo_config, 'r') as arquivo:
-            for linha in arquivo:
-                nome, ip, porta = linha.strip().split()
-                if nome == self.nome_roteador:
-                    self.ip_roteador = ip
-                    self.porta_roteador = int(porta)
-                    self.tabela_roteamento[nome] = self.Caminho(nome, 0)
-                else:
-                    self.roteadores_na_rede[nome] = (ip, int(porta))
+        with open(arquivo_config, 'r') as arquivo:                          # abre o arquivo de configuracao como leitura
+            for linha in arquivo:                                           # para cada linha do arquivo de roteadores...
+                nome, ip, porta = linha.strip().split()                     # divide o conteudo da linha em nome, ip e porta
+                if nome == self.nome_roteador:                              # se o nome do roteador do arquivo for igual ao nome do roteador do objeto
+                    self.ip_roteador = ip                                   # adiciona o ip ao objeto do roteador
+                    self.porta_roteador = int(porta)                        # adiciona a porta ao objeto do roteador
+                    self.tabela_roteamento[nome] = self.Caminho(nome, 0)    # adiciona a tabela de roteamento ao objeto do roteador
+                else:                                                       # se nao...
+                    self.roteadores_na_rede[nome] = (ip, int(porta))        # adiciona o roteador do arquivo na lista de roteador da rede
 
     def lidar_com_pacote(self, pacote):
-        if self.eh_pacote_de_configuracao(pacote):
-            self.executa_configuracao(pacote)
-        elif self.eh_pacote_de_dados(pacote):
-            self.trata_pacote_de_dados(pacote)
-    
-    def eh_pacote_de_configuracao(self, pacote):
-        return pacote.decode()[0] in 'CDTEI'
-            
+        if self.eh_pacote_de_configuracao(pacote):  # se for pacote de configuracao...
+            self.executa_configuracao(pacote)       # executa configuracao
+        elif self.eh_pacote_de_dados(pacote):       # se for pacote de dados...
+            self.trata_pacote_de_dados(pacote)      # trata o pacote de dados
+
+    def eh_pacote_de_configuracao(self, pacote):    # se for pacote de configuracao...
+        return pacote.decode()[0] in 'CDTEI'        # retorna verdadeiro se o comando eh um dos comandos de configuracao
+
     def envia_pela_tabela(self, msg, destino):
-        msg = b"M" + msg + b" " + destino.encode()
-        prox = self.tabela_roteamento[destino].prox_passo
-        endereco_prox = self.roteadores_na_rede[prox]
-        self.socket.sendto(msg, endereco_prox)
-    
+        msg = b"M" + msg + b" " + destino.encode()          # monta a mensagem contendo a mensagem e o destino
+        prox = self.tabela_roteamento[destino].prox_passo   # define o proximo como sendo o proximo passo do destino na tabela de roteamento
+        endereco_prox = self.roteadores_na_rede[prox]       # armazena o endereco do destino
+        self.socket.sendto(msg, endereco_prox)              # envia a mensagem para o destino via socket UDP
+
     def executa_configuracao(self, pacote):
-        config = chr(pacote[0])
-        if len(pacote) > 1:
-            roteador_referido = unpack(">32s", pacote[1:33])[0].rstrip(b'\x00').decode()
-        else:
-            roteador_referido = 0
-        
-        if config == 'C':
-            self.vizinhos[roteador_referido] = self.roteadores_na_rede[roteador_referido]
-            self.tabela_roteamento[roteador_referido] = self.Caminho(roteador_referido, 1)
-        if config == 'D':
-            self.vizinhos.pop(roteador_referido)
-            for caminho in self.tabela_roteamento.values():
-                if caminho.prox_passo == roteador_referido:
-                    del self.roteadores_na_rede[roteador_referido]
-        if config == 'T':
-            for destino, caminho in self.tabela_roteamento.items():
-                print("T", destino, caminho.prox_passo, caminho.distancia)
-        if config == 'E':
-            msg = pacote[34:99]
-            self.envia_pela_tabela(msg, roteador_referido)
-        if config == 'I':
-            threading.Thread(target=self.iniciar_roteamento, daemon=True).start()
+        config = chr(pacote[0])                                                             # converte um numero de unicode em seu respectivo caractere
+        if len(pacote) > 1:                                                                 # se o pacote tiver tamanho maior que um...
+            roteador_referido = unpack(">32s", pacote[1:33])[0].rstrip(b'\x00').decode()    # obtem o nome do roteador
+        else:                                                                               # se nao...
+            roteador_referido = 0                                                           # o roteador eh o primeiro
+
+        if config == 'C':                                                                   # se for configuracao de conexao...
+            self.vizinhos[roteador_referido] = self.roteadores_na_rede[roteador_referido]   # adiciona o roteador na posicao do roteador calculada dentro da lista de vizinhos
+            self.tabela_roteamento[roteador_referido] = self.Caminho(roteador_referido, 1)  # adiciona o caminho na posicao do roteador calculada dentro da tabela de roteamento
+        if config == 'D':                                                                   # se for configuracao de desconexao...
+            self.vizinhos.pop(roteador_referido)                                            # remove o elemento da posicao do roteador calculada da lista de vizinhos
+            for caminho in self.tabela_roteamento.values():                                 # para cada caminho na tabela de roteamento...
+                if caminho.prox_passo == roteador_referido:                                 # se o proximo passo for a posicao do roteador calculada...
+                    del self.roteadores_na_rede[roteador_referido]                          # deleta o roteador referido da lista de roteadores na rede
+        if config == 'T':                                                                   # se for configuracao de tabela...
+            for destino, caminho in self.tabela_roteamento.items():                         # para cada destino e caminho na tabela de roteamento...
+                print("T", destino, caminho.prox_passo, caminho.distancia)                  # imprime na tela o destino, proximo passo e destino
+        if config == 'E':                                                                   # se for configuracao de envio...
+            msg = pacote[34:99]                                                             # capta a mensagem no pacote
+            self.envia_pela_tabela(msg, roteador_referido)                                  # e envia para o roteador de destino
+        if config == 'I':                                                                   # se for configuracao de inicio...
+            threading.Thread(target=self.iniciar_roteamento, daemon=True).start()           # inicia o envio de informacoes do vetor de distancia para os vizinhos
 
     def eh_pacote_de_dados(self, pacote):
-        return not self.eh_pacote_de_configuracao(pacote)
-    
+        return not self.eh_pacote_de_configuracao(pacote)   # retorna verdadeiro se nao for pacote de configuracao
+
     def destinos_tabela_roteamento(self):
-        return [str(destino) for destino in self.tabela_roteamento.keys()]
+        return [str(destino) for destino in self.tabela_roteamento.keys()]  # retorna a lista de destinos da tabela de roteamento
 
     def trata_pacote_de_dados(self, pacote):
         # M: mensagem | R: roteamento
-        tipo = chr(pacote[0])
-        if tipo == 'M':
-            msg, destino = pacote[1:].rsplit(maxsplit=1)
-            destino = destino.decode()
-            if destino == self.nome_roteador:
-                print("R", msg.decode())
-            elif destino in self.destinos_tabela_roteamento():
-                self.envia_pela_tabela(msg, destino)
-        elif tipo == 'R':
-            origem, pacote = pacote[1:].split(maxsplit=1)
-            origem = origem.decode()
+        tipo = chr(pacote[0])                                                                                           # obtem o tipo de pacote de dados
+        if tipo == 'M':                                                                                                 # se o pacote for de mensagem...
+            msg, destino = pacote[1:].rsplit(maxsplit=1)                                                                # armazena a mensagem e o destino vindas do pacote 
+            if destino == self.nome_roteador:                                                                           # se o destino for o roteador atual...
+                print("R", msg.decode())                                                                                # imprime 'R' e o a mensagem decodificada
+            elif destino in self.destinos_tabela_roteamento():                                                          # se o destino estiver nos destinos da tabela de roteamento...
+                self.envia_pela_tabela(msg, destino)                                                                    # envia a mensagem para o destino pela tabela
+        elif tipo == 'R':                                                                                               # se o pacote for de roteamento...
+            origem, pacote = pacote[1:].split(maxsplit=1)                                                               # armazena a origem e o o pacote
+            origem = origem.decode()                                                                                    # decodifica a origem
 
-            self.tabela_roteamento[origem] = self.Caminho(origem, 1)
+            self.tabela_roteamento[origem] = self.Caminho(origem, 1)                                                    # inicializa um caminho na tabela de roteamento para 'origem' com distancia mínima de 1
 
-            linhas = pacote.splitlines()
-            for linha in linhas:
-                [destino, prox_passo, distancia] = linha.decode().split()
-                if (destino not in self.tabela_roteamento) or (self.tabela_roteamento[destino].prox_passo == origem):
-                    self.tabela_roteamento[destino] = self.Caminho(origem, int(distancia) + 1)
-                else:
-                    self.tabela_roteamento[destino] = min(self.Caminho(prox_passo, int(distancia) + 1), self.tabela_roteamento[destino])
+            linhas = pacote.splitlines()                                                                                # obtem as linhas do pacote
+            for linha in linhas:                                                                                        # para cada linha em linhas...
+                [destino, prox_passo, distancia] = linha.decode().split()                                               #  armazena o destino, proximo passo e distancia em uma lista
+                if (destino not in self.tabela_roteamento) or (self.tabela_roteamento[destino].prox_passo == origem):   # se o destino nao estiver na tabela de roteamento ou seo próximo passo para destino na tabela de roteamento e igual a origem
+                    self.tabela_roteamento[destino] = self.Caminho(origem, int(distancia) + 1)                          # atualiza a tabela de roteamento para 'destino' com um caminho que tem 'origem' como proximo passo e incrementa a distancia em 1
+                else:                                                                                                   # se nao...
+                    self.tabela_roteamento[destino] = min(
+                        self.Caminho(prox_passo, int(distancia) + 1), self.tabela_roteamento[destino]                   # # define a rota para 'destino' como o menor entre o novo caminho e o caminho existente na tabela de roteamento.
+                    )
 
     def executar(self):
-        while True:
-            pacote, _ = self.socket.recvfrom(1024)
-            self.lidar_com_pacote(pacote)
+        while True:                                 # cria um loop infinito que...
+            pacote, _ = self.socket.recvfrom(1024)  # recebe o pacote e uma tupla com ip e porta
+            self.lidar_com_pacote(pacote)           # chama uma funcao que vai lidar com o pacote
 
     def formata_tabela_roteamento(self):
         msg = ''
         try:
-            for (destino, caminho) in self.tabela_roteamento.items():
-                linha = ' '.join([destino, caminho.prox_passo, str(caminho.distancia)])
-                msg += linha + "\n"
+            for (destino, caminho) in self.tabela_roteamento.items():                   # para cada destino e caminho na tabela de roteamento...
+                linha = ' '.join([destino, caminho.prox_passo, str(caminho.distancia)]) # concatena 'destino', 'prox_passo' e 'distancia' em uma string unica, separados por espacos.
+                msg += linha + "\n"                                                     # adiciona a linha a mensagem com uma quebra de linha
         except:
-            pass
-        return msg
+            print("Erro ao formatar a tabela de roteamento")                            # retorna erro se nao for possivel criar a mensagem
+        return msg                                                                      # retorna a mensagem
 
     def enviar_info_roteamento(self):
-        msg = "R" + self.nome_roteador + " " + self.formata_tabela_roteamento()
-        for vizinho in self.vizinhos.values():
-            self.socket.sendto(msg.encode(), vizinho)
+        msg = "R" + self.nome_roteador + " " + self.formata_tabela_roteamento() # cria a mensagem contendo o tipo de pacote, nome do roteador e a mensagem
+        for vizinho in self.vizinhos.values():                                  # para cada vizinho do roteador...
+            self.socket.sendto(msg.encode(), vizinho)                           # envia a mensagem atraves de um socket UDP
 
     def iniciar_roteamento(self):
-        while True:
-            self.enviar_info_roteamento()
-            time.sleep(1)  # intervalo configurável
+        while True:                         # cria um loop infinito
+            self.enviar_info_roteamento()   # enviar as informacoes de roteamento
+            time.sleep(1)                   # espera um segundo 
 
 def main():
-    if len(sys.argv) != 3:
-        print(f"Uso: {sys.argv[0]} nome_roteador arquivo_config")
+    if len(sys.argv) != 3:                                          # se o usuario colocar uma quantidade errada de argumentos...
+        print(f"Uso: {sys.argv[0]} nome_roteador arquivo_config")   # retorna o uso correto dos argumentos do programa
         return
 
     nome_roteador = sys.argv[1]
