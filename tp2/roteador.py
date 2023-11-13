@@ -52,6 +52,8 @@ class Roteador:
         return pacote.decode()[0] in 'CDTEI'        # retorna verdadeiro se o comando eh um dos comandos de configuracao
 
     def envia_pela_tabela(self, msg, destino):
+        if destino not in self.tabela_roteamento:
+            return
         msg = b"M" + msg + b" " + destino.encode()          # monta a mensagem contendo a mensagem e o destino
         prox = self.tabela_roteamento[destino].prox_passo   # define o proximo como sendo o proximo passo do destino na tabela de roteamento
         endereco_prox = self.roteadores_na_rede[prox]       # armazena o endereco do destino
