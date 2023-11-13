@@ -62,7 +62,7 @@ class Roteador:
         if len(pacote) > 1:                                                                 # se o pacote tiver tamanho maior que um...
             roteador_referido = unpack(">32s", pacote[1:33])[0].rstrip(b'\x00').decode()    # obtem o nome do roteador
         else:                                                                               # se nao...
-            roteador_referido = 0                                                           # o roteador eh o primeiro
+            roteador_referido = None                                                        # a informação não é relevante
 
         if config == 'C':                                                                   # se for configuracao de conexao...
             self.vizinhos[roteador_referido] = self.roteadores_na_rede[roteador_referido]   # adiciona o roteador na posicao do roteador calculada dentro da lista de vizinhos
@@ -106,12 +106,19 @@ class Roteador:
             origem, pacote = pacote[1:].split(maxsplit=1)                                                               # armazena a origem e o o pacote
             origem = origem.decode()                                                                                    # decodifica a origem
 
+            if origem not in self.vizinhos:
+                return
+
             self.tabela_roteamento[origem] = self.Caminho(origem, 1)                                                    # inicializa um caminho na tabela de roteamento para 'origem' com distancia mínima de 1
 
             linhas = pacote.splitlines()                                                                                # obtem as linhas do pacote
             for linha in linhas:                                                                                        # para cada linha em linhas...
-                [destino, prox_passo, distancia] = linha.decode().split()                                               #  armazena o destino, proximo passo e distancia em uma lista
-                if (destino not in self.tabela_roteamento) or (self.tabela_roteamento[destino].prox_passo == origem):   # se o destino nao estiver na tabela de roteamento ou seo próximo passo para destino na tabela de roteamento e igual a origem
+                [destino, prox_passo, distancia] = linha.decode().split()                                               # armazena o destino, proximo passo e distancia em uma lista
+                if prox_passo == self.nome_roteador:
+                    continue
+                if destino not in self.tabela_roteamento:
+                    self.tabela_roteamento[destino] = self.Caminho(origem, int(distancia) + 1)
+                elif self.tabela_roteamento[destino].prox_passo == origem:
                     self.tabela_roteamento[destino] = self.Caminho(origem, int(distancia) + 1)                          # atualiza a tabela de roteamento para 'destino' com um caminho que tem 'origem' como proximo passo e incrementa a distancia em 1
                 else:                                                                                                   # se nao...
                     self.tabela_roteamento[destino] = min(
