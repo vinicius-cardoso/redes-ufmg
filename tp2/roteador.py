@@ -13,6 +13,9 @@ class Roteador:
         self.carregar_config(arquivo_config)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)  # cria um socket UDP para
         self.socket.bind((self.ip_roteador, self.porta_roteador))       # conecta ao roteador pelo ip e porta
+        self.tabelaLock = threading.Lock()
+        self.vizinhosLock = threading.Lock()
+        self.iniciouRoteamento = False
 
     class Caminho:
         def __init__(self, prox, dist):
@@ -64,19 +67,24 @@ class Roteador:
         if config == 'C':                                                                   # se for configuracao de conexao...
             self.vizinhos[roteador_referido] = self.roteadores_na_rede[roteador_referido]   # adiciona o roteador na posicao do roteador calculada dentro da lista de vizinhos
             self.tabela_roteamento[roteador_referido] = self.Caminho(roteador_referido, 1)  # adiciona o caminho na posicao do roteador calculada dentro da tabela de roteamento
-        if config == 'D':                                                                   # se for configuracao de desconexao...
+        elif config == 'D':                                                                 # se for configuracao de desconexao...
             self.vizinhos.pop(roteador_referido)                                            # remove o elemento da posicao do roteador calculada da lista de vizinhos
-            for caminho in self.tabela_roteamento.values():                                 # para cada caminho na tabela de roteamento...
-                if caminho.prox_passo == roteador_referido:                                 # se o proximo passo for a posicao do roteador calculada...
-                    del self.roteadores_na_rede[roteador_referido]                          # deleta o roteador referido da lista de roteadores na rede
-        if config == 'T':                                                                   # se for configuracao de tabela...
-            for destino, caminho in self.tabela_roteamento.items():                         # para cada destino e caminho na tabela de roteamento...
-                print("T", destino, caminho.prox_passo, caminho.distancia)                  # imprime na tela o destino, proximo passo e destino
-        if config == 'E':                                                                   # se for configuracao de envio...
-            msg = pacote[34:99]                                                             # capta a mensagem no pacote
-            self.envia_pela_tabela(msg, roteador_referido)                                  # e envia para o roteador de destino
-        if config == 'I':                                                                   # se for configuracao de inicio...
-            threading.Thread(target=self.iniciar_roteamento, daemon=True).start()           # inicia o envio de informacoes do vetor de distancia para os vizinhos
+            destinos_a_retirar = []
+            for destino, caminho in self.tabela_roteamento.items():        # para cada caminho na tabela de roteamento...
+                if caminho.prox_passo == roteador_referido:                # se o proximo passo for a posicao do roteador calculada...
+                    destinos_a_retirar.append(destino)                     # registra que deve o retirar
+            for entrada in destinos_a_retirar:                             # para cada caminho a ser retirado...
+                self.tabela_roteamento.pop(entrada)                        # o retira
+        elif config == 'T':                                                # se for configuracao de tabela...
+            for destino, caminho in self.tabela_roteamento.items():        # para cada destino e caminho na tabela de roteamento...
+                print("T", destino, caminho.prox_passo, caminho.distancia) # imprime na tela o destino, proximo passo e destino
+        elif config == 'E':                                                # se for configuracao de envio...
+            msg = pacote[33:98]                                            # capta a mensagem no pacote
+            self.envia_pela_tabela(msg, roteador_referido)                 # e envia para o roteador de destino
+        elif config == 'I':                                                # se for configuracao de inicio...
+            if not self.iniciouRoteamento:
+                threading.Thread(target=self.iniciar_roteamento, daemon=True).start() # inicia o envio de informacoes do vetor de distancia para os vizinhos
+                self.iniciouRoteamento = True
 
     def eh_pacote_de_dados(self, pacote):
         return not self.eh_pacote_de_configuracao(pacote)   # retorna verdadeiro se nao for pacote de configuracao
@@ -88,7 +96,8 @@ class Roteador:
         # M: mensagem | R: roteamento
         tipo = chr(pacote[0])                                                                                           # obtem o tipo de pacote de dados
         if tipo == 'M':                                                                                                 # se o pacote for de mensagem...
-            msg, destino = pacote[1:].rsplit(maxsplit=1)                                                                # armazena a mensagem e o destino vindas do pacote 
+            msg, destino = pacote[1:].rsplit(maxsplit=1)                                                                # armazena a mensagem e o destino vindas do pacote
+            destino = destino.decode()
             if destino == self.nome_roteador:                                                                           # se o destino for o roteador atual...
                 print("R", msg.decode())                                                                                # imprime 'R' e o a mensagem decodificada
             elif destino in self.destinos_tabela_roteamento():                                                          # se o destino estiver nos destinos da tabela de roteamento...
@@ -116,18 +125,17 @@ class Roteador:
 
     def formata_tabela_roteamento(self):
         msg = ''
-        try:
+        with self.tabelaLock:
             for (destino, caminho) in self.tabela_roteamento.items():                   # para cada destino e caminho na tabela de roteamento...
                 linha = ' '.join([destino, caminho.prox_passo, str(caminho.distancia)]) # concatena 'destino', 'prox_passo' e 'distancia' em uma string unica, separados por espacos.
                 msg += linha + "\n"                                                     # adiciona a linha a mensagem com uma quebra de linha
-        except:
-            print("Erro ao formatar a tabela de roteamento")                            # retorna erro se nao for possivel criar a mensagem
         return msg                                                                      # retorna a mensagem
 
     def enviar_info_roteamento(self):
         msg = "R" + self.nome_roteador + " " + self.formata_tabela_roteamento() # cria a mensagem contendo o tipo de pacote, nome do roteador e a mensagem
-        for vizinho in self.vizinhos.values():                                  # para cada vizinho do roteador...
-            self.socket.sendto(msg.encode(), vizinho)                           # envia a mensagem atraves de um socket UDP
+        with self.vizinhosLock:
+            for vizinho in self.vizinhos.values():                              # para cada vizinho do roteador...
+                self.socket.sendto(msg.encode(), vizinho)                       # envia a mensagem atraves de um socket UDP
 
     def iniciar_roteamento(self):
         while True:                         # cria um loop infinito
