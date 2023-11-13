@@ -24,10 +24,10 @@ class Roteador:
 
         def __lt__(self, other):
             return self.distancia < other.distancia     # retorna verdadeiro se a distancia do objeto for menor que a do outro
-        
+
         def __gt__(self, other):
             return self.distancia > other.distancia     # retorna verdadeiro se a distancia do objeto for maior que a do outro
-        
+
         def __eq__(self, other):
             return self.distancia == other.distancia    # retorna verdadeiro se a distancia do objeto for igual a do outro
 
@@ -59,11 +59,11 @@ class Roteador:
 
     def eh_pacote_de_configuracao(self, pacote):
         return pacote.decode()[0] in 'CDTEI'                # retorna verdadeiro se o comando eh um dos comandos de configuracao
-    
-    
+
+
     def eh_pacote_de_dados(self, pacote):
         return not self.eh_pacote_de_configuracao(pacote)   # retorna verdadeiro se nao for pacote de configuracao (se não for nenhum, emite erro)
-    
+
 
     def executa_configuracao(self, pacote):
         config = chr(pacote[0])                                                             # converte um numero de unicode em seu respectivo caractere
@@ -161,7 +161,7 @@ class Roteador:
     def iniciar_roteamento(self):
         while True:                         # cria um loop infinito
             self.enviar_info_roteamento()   # enviar as informacoes de roteamento
-            time.sleep(1)                   # espera um segundo 
+            time.sleep(1)                   # espera um segundo
 
 
 
