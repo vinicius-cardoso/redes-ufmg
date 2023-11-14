@@ -1,3 +1,5 @@
+# Eduardo Henrique Basilio de Carvalho | Vinicius Cardoso Antunes
+
 import sys
 import time
 import socket
