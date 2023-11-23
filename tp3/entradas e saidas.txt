@@ -1,0 +1,12 @@
+entradas:
+sala (chamada): num porto
+envia (chamada): id cliente, nome host, num porto
+envia (execucao): M, dest, msg; L; F; T
+exibe (chamada): id cliente, num porto comandos, nome host, num porto servidor
+
+saídas:
+envia: retorno registra_entrada()
+envia (M, dest, msg): retorno envia()
+envia (L): retorno lista()
+exibe (chamada): retorno registra_saida()
+exibe (exibe()): 'Mensagem de {origem}: {msg}'

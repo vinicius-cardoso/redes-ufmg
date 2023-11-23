@@ -1,0 +1,11 @@
+registra_entrada(char id[16])
+
+registra_saida(char id[16], char fqdn[256], short int port)
+
+lista()
+
+finaliza_registro()
+
+termina()
+
+envia(char msg[128],char destino[16])
