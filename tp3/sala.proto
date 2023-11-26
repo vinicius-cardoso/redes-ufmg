@@ -1,11 +1,44 @@
-registra_entrada(char id[16])
+syntax = "proto3";
 
-registra_saida(char id[16], char fqdn[256], short int port)
+package sala;
 
-lista()
+service sala {
+  rpc registra_entrada(canal_envio) returns (qtd) {}
 
-finaliza_registro()
+  rpc registra_saida(exibidor) returns (qtd) {}
 
-termina()
+  rpc lista(Empty) returns (slista) {}
 
-envia(char msg[128],char destino[16])
+  rpc finaliza_registro(Empty) returns (qtd) {}
+
+  rpc termina(Empty) returns (Empty) {}
+
+  rpc envia(envio) returns (qtd) {}
+}
+
+message qtd {
+  int32 quantidade = 1;
+}
+
+message slista {
+  string lista_id = 1;
+}
+
+message canal_envio {
+  string id = 1;
+}
+
+message exibidor {
+  string id = 1;
+  string fqdn = 2;
+  int32 port = 3;
+}
+
+message envio {
+  string msg = 1;
+  string destino = 2;
+}
+
+message Empty {
+
+}
