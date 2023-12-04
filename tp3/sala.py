@@ -38,8 +38,7 @@ def main():
     rpc.add_ChatServerServicer_to_server(SalaServidor(), servidor)
     servidor.add_insecure_port('[::]:' + numero_porto)
     servidor.start()
-    while True:
-        sleep(float('inf'))
+    servidor.wait_for_termination()
 
 if __name__ == "__main__":
     main()
