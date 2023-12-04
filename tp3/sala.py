@@ -3,7 +3,6 @@ import grpc
 import sala_pb2 as chat
 import sala_pb2_grpc as rpc
 from concurrent import futures
-from time import sleep
 
 class SalaServidor(rpc.salaServicer):
     def __init__(self):

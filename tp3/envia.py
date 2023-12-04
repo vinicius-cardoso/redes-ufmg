@@ -1,27 +1,52 @@
 from sys import argv
+import grpc
+import sala_pb2 as chat
+import sala_pb2_grpc as rpc
+
+class Cliente:
+    def __init__(self, id, endereco, porto):
+        self.id = id
+        self.nome = endereco
+        self.porto = porto
+        canal = grpc.insecure_channel(endereco + ':' + porto)
+        self.conexao = rpc.salaStub(canal)
+
+    def registrar(self):
+        canal_envio = chat.canal_envio()
+        canal_envio.id = self.id
+        qtd = self.conexao.registra_entrada(canal_envio)
+        print(qtd)
+
+    def enviar(self, destino, mensagem):
+        envio = chat.envio()
+        envio.destino = destino
+        envio.msg = mensagem
+        qtd = self.conexao.envia(envio)
+        print(qtd)
+
 
 def main():
     if len(argv) != 4:
         print(f"Uso: {argv[0]} id_cliente nome_host num_porto")
         return
 
-    id_cliente = argv[1]
-    nome_host  = argv[2]
-    num_porto  = argv[3]
+    cliente = Cliente(argv[1], argv[2], argv[3])
 
-    # registra entrada
+    cliente.registrar()
 
-    comando = input().split(',')
+    while True:
+        comando = input().split(',')
 
-    if comando[0] == 'M':
-        destino, mensagem = comando[1], comando[2]
-        pass
-    elif comando[0] == 'L':
-        pass
-    elif comando[0] == 'F':
-        pass
-    elif comando[0] == 'T':
-        pass
+        if comando[0] == 'M':
+            destino, mensagem = comando[1], comando[2]
+
+            pass
+        elif comando[0] == 'L':
+            pass
+        elif comando[0] == 'F':
+            pass
+        elif comando[0] == 'T':
+            pass
     
     
 
