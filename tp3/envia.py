@@ -14,15 +14,13 @@ class Cliente:
     def registrar(self):
         canal_envio = chat.canal_envio()
         canal_envio.id = self.id
-        qtd = self.conexao.registra_entrada(canal_envio)
-        print(qtd)
+        return self.conexao.registra_entrada(canal_envio)
 
     def enviar(self, destino, mensagem):
         envio = chat.envio()
         envio.destino = destino
         envio.msg = mensagem
         return self.conexao.envia(envio)
-        print(qtd)
 
 
 def main():
@@ -32,7 +30,8 @@ def main():
 
     cliente = Cliente(argv[1], argv[2], argv[3])
 
-    cliente.registrar()
+    qtd = cliente.registrar()
+    print(qtd)
 
     while True:
         comando = input().split(',')

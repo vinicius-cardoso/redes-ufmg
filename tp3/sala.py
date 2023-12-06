@@ -2,12 +2,18 @@ from sys import argv
 import grpc
 import sala_pb2 as chat
 import sala_pb2_grpc as rpc
+import exibe_pb2 as exibidor
+import exibe_pb2_grpc as exibidor_rpc
 from concurrent import futures
+import threading
+
+# tem q consertar o fqdn
 
 class SalaServidor(rpc.salaServicer):
-    def __init__(self):
+    def __init__(self, evento_parada):
         self.entradas = []
         self.saidas = {}
+        self.evento_parada = evento_parada
 
     def registra_entrada(self, request, context):
         if request.id in self.entradas:
@@ -20,8 +26,11 @@ class SalaServidor(rpc.salaServicer):
         if request.id in self.saidas:
             return -1
         else:
-            self.saidas[request.id] = (request.fqdn, request.port)
-        return super().registra_saida(request, context)
+            endereco = request.fqdn + ':' + request.port
+            canal = grpc.insecure_channel(endereco)
+            conexao = exibidor_rpc.exibeStub(canal)
+            self.saidas[request.id] = (endereco, conexao)
+            return len(self.saidas)
     
     def lista(self, request, context):
         ids_tipos = []
@@ -38,9 +47,15 @@ class SalaServidor(rpc.salaServicer):
         return super().finaliza_registro(request, context)
     
     def termina(self, request, context):
-        return super().termina(request, context)
+        for _, conexao in self.saidas.values():
+            conexao.termina()
+        self.evento_parada.set()
+        return
     
     def envia(self, request, context):
+        for _, conexao in self.saidas.values():
+            envio = exibidor.mensagem()
+            envio.origem = 
         return super().envia(request, context)
 
 def main():
@@ -50,11 +65,12 @@ def main():
 
     numero_porto = argv[1]
 
+    evento_parada = threading.Event()
     servidor = grpc.server(futures.ThreadPoolExecutor())
-    rpc.add_ChatServerServicer_to_server(SalaServidor(), servidor)
+    rpc.add_ChatServerServicer_to_server(SalaServidor(evento_parada), servidor)
     servidor.add_insecure_port('[::]:' + numero_porto)
     servidor.start()
     servidor.wait_for_termination()
-
+    servidor.stop(0)
 if __name__ == "__main__":
     main()
