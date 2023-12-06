@@ -6,18 +6,35 @@ from concurrent import futures
 
 class SalaServidor(rpc.salaServicer):
     def __init__(self):
-        self.programas = []
+        self.entradas = []
+        self.saidas = {}
 
     def registra_entrada(self, request, context):
-        return super().registra_entrada(request, context)
+        if request.id in self.entradas:
+            return -1
+        else:
+            self.entradas.append(request.id)
+            return len(self.entradas)
     
     def registra_saida(self, request, context):
+        if request.id in self.saidas:
+            return -1
+        else:
+            self.saidas[request.id] = (request.fqdn, request.port)
         return super().registra_saida(request, context)
     
     def lista(self, request, context):
-        return super().lista(request, context)
+        ids_tipos = []
+        for id in self.entradas:
+            ids_tipos.append((id, "entrada"))
+        for id in self.saidas.keys():
+            ids_tipos.append((id, "saidas"))
+        return ids_tipos
     
     def finaliza_registro(self, request, context):
+        # enunciado manda remover registro de quem chamou
+        # a chamada não informa o id do cliente
+        # o registro só armazena o id do cliente (no caso de entradas)
         return super().finaliza_registro(request, context)
     
     def termina(self, request, context):

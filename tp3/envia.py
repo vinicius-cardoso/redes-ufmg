@@ -21,7 +21,7 @@ class Cliente:
         envio = chat.envio()
         envio.destino = destino
         envio.msg = mensagem
-        qtd = self.conexao.envia(envio)
+        return self.conexao.envia(envio)
         print(qtd)
 
 
@@ -36,10 +36,10 @@ def main():
 
     while True:
         comando = input().split(',')
-
         if comando[0] == 'M':
             destino, mensagem = comando[1], comando[2]
-
+            qtd = cliente.enviar(destino, mensagem)
+            print(qtd)
             pass
         elif comando[0] == 'L':
             pass
