@@ -7,12 +7,10 @@ import exibe_pb2_grpc as exibidor_rpc
 from concurrent import futures
 import threading
 
-# tem q consertar o fqdn
-
 class SalaServidor(rpc.salaServicer):
     def __init__(self, evento_parada):
         self.entradas = []
-        self.saidas = {}
+        self.saidas: {str: (str, str, str)} = {}
         self.evento_parada = evento_parada
 
     def registra_entrada(self, request, context):
@@ -26,17 +24,17 @@ class SalaServidor(rpc.salaServicer):
         if request.id in self.saidas:
             return -1
         else:
-            endereco = request.fqdn + ':' + request.port
+            endereco = '[::]:' + request.port
             canal = grpc.insecure_channel(endereco)
             conexao = exibidor_rpc.exibeStub(canal)
-            self.saidas[request.id] = (endereco, conexao)
+            self.saidas[request.fqdn] = (endereco, conexao, request.id)
             return len(self.saidas)
     
     def lista(self, request, context):
         ids_tipos = []
         for id in self.entradas:
             ids_tipos.append((id, "entrada"))
-        for id in self.saidas.keys():
+        for (_, _, id) in self.saidas.values():
             ids_tipos.append((id, "saidas"))
         return ids_tipos
     
@@ -47,16 +45,28 @@ class SalaServidor(rpc.salaServicer):
         return super().finaliza_registro(request, context)
     
     def termina(self, request, context):
-        for _, conexao in self.saidas.values():
+        for (_, conexao, _) in self.saidas.values():
             conexao.termina()
         self.evento_parada.set()
         return
     
     def envia(self, request, context):
-        for _, conexao in self.saidas.values():
-            envio = exibidor.mensagem()
-            envio.origem = 
-        return super().envia(request, context)
+        envio = exibidor.mensagem()
+        envio.origem = context.peer()
+        envio.smensagem = request.msg
+
+        if request.destino == "todos":
+            for (_, conexao, _) in self.saidas.values():
+                conexao.exibe(envio)
+            qtd = len(self.saidas)
+        else:
+            destino = self.saidas.get(request.destino)
+            if destino:
+                destino[1].exibe(envio)
+                qtd = 1
+            else:
+                qtd = 0
+        return qtd
 
 def main():
     if len(argv) != 2:
