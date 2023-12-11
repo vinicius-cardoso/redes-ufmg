@@ -7,6 +7,8 @@ from sys import argv
 class Cliente:
     def __init__(self, id_cliente, host, porto):
         self.id_cliente = id_cliente
+        self.host = host
+        self.porto = porto
         self.channel = grpc.insecure_channel(f'{host}:{porto}')
         self.stub = sala_pb2_grpc.SalaStub(self.channel)
 
@@ -14,6 +16,7 @@ class Cliente:
         return self.stub.registra_entrada(
             sala_pb2.RegistraEntradaRequest(id=self.id_cliente)
         )
+        # self.stub.registra_entrada(sala_pb2.RegistraEntradaRequest(id=self.id_cliente))
 
     def registra_saida(self, port):
         fqdn = socket.getfqdn()
@@ -78,14 +81,14 @@ def main():
         print(f'Uso: {argv[0]} id_cliente host port')
         return
 
-    id_cliente = int(argv[1])
+    id_cliente = argv[1]
     host = argv[2]
     porto = int(argv[3])
 
     cliente = Cliente(id_cliente, host, porto)
 
     # Registrar a saída antes de registrar a entrada
-    resposta_saida = cliente.registra_saida(porto)
+    resposta_saida = cliente.registra_saida(cliente.porto)
     if resposta_saida.quantidade_programas == -1:
         print("Erro: ID já registrado para saída.")
         return

@@ -35,7 +35,7 @@ def serve():
         return
 
     # Recebe as informações necessárias da linha de comando
-    id_cliente = int(argv[1])
+    id_cliente = argv[1]
     porto_exibidor = int(argv[2])
     host = argv[3]
     porto_servidor = int(argv[4])

@@ -1,0 +1,35 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Sala",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/sala.py",
+            "console": "integratedTerminal",
+            "args": ["50051"]
+        },
+        {
+            "name": "Python: Envio",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/envia.py",
+            "console": "integratedTerminal",
+            "args": ["2", "localhost", "50051"]
+        },
+        {
+            "name": "Python: Exibição",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/exibe.py",
+            "console": "integratedTerminal",
+            "args": ["1", "50052", "localhost", "50051"]
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Iniciar Todos os Scripts",
+            "configurations": ["Python: Sala", "Python: Envio", "Python: Exibição"]
+        }
+    ]
+}
