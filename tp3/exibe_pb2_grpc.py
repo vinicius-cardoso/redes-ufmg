@@ -5,7 +5,7 @@ import grpc
 import exibe_pb2 as exibe__pb2
 
 
-class exibeStub(object):
+class ExibeStub(object):
     """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
@@ -15,18 +15,18 @@ class exibeStub(object):
             channel: A grpc.Channel.
         """
         self.exibe = channel.unary_unary(
-                '/exibe.exibe/exibe',
+                '/exibe.Exibe/exibe',
                 request_serializer=exibe__pb2.mensagem.SerializeToString,
                 response_deserializer=exibe__pb2.Empty.FromString,
                 )
         self.termina = channel.unary_unary(
-                '/exibe.exibe/termina',
+                '/exibe.Exibe/termina',
                 request_serializer=exibe__pb2.Empty.SerializeToString,
                 response_deserializer=exibe__pb2.Empty.FromString,
                 )
 
 
-class exibeServicer(object):
+class ExibeServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def exibe(self, request, context):
@@ -42,7 +42,7 @@ class exibeServicer(object):
         raise NotImplementedError('Method not implemented!')
 
 
-def add_exibeServicer_to_server(servicer, server):
+def add_ExibeServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'exibe': grpc.unary_unary_rpc_method_handler(
                     servicer.exibe,
@@ -56,12 +56,12 @@ def add_exibeServicer_to_server(servicer, server):
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'exibe.exibe', rpc_method_handlers)
+            'exibe.Exibe', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
  # This class is part of an EXPERIMENTAL API.
-class exibe(object):
+class Exibe(object):
     """Missing associated documentation comment in .proto file."""
 
     @staticmethod
@@ -75,7 +75,7 @@ class exibe(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/exibe.exibe/exibe',
+        return grpc.experimental.unary_unary(request, target, '/exibe.Exibe/exibe',
             exibe__pb2.mensagem.SerializeToString,
             exibe__pb2.Empty.FromString,
             options, channel_credentials,
@@ -92,7 +92,7 @@ class exibe(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/exibe.exibe/termina',
+        return grpc.experimental.unary_unary(request, target, '/exibe.Exibe/termina',
             exibe__pb2.Empty.SerializeToString,
             exibe__pb2.Empty.FromString,
             options, channel_credentials,

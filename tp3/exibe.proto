@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package exibe;
 
-service exibe {
+service Exibe {
   rpc exibe(mensagem) returns (Empty) {}
 
   rpc termina(Empty) returns (Empty) {}

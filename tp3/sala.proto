@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package sala;
 
-service sala {
+service Sala {
   rpc registra_entrada(canal_envio) returns (qtd) {}
 
   rpc registra_saida(exibidor) returns (qtd) {}

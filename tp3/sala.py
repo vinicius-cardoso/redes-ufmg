@@ -82,7 +82,7 @@ def main():
 
     evento_parada = threading.Event()
     servidor = grpc.server(futures.ThreadPoolExecutor())
-    rpc.add_ChatServerServicer_to_server(SalaServidor(evento_parada), servidor)
+    rpc.add_salaServicer_to_server(SalaServidor(evento_parada), servidor)
     servidor.add_insecure_port('[::]:' + numero_porto)
     servidor.start()
     servidor.wait_for_termination()
