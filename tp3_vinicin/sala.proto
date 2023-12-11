@@ -34,7 +34,7 @@ message UserList {
 }
 
 message TerminaResponse {
-    int32 response = 1;
+    bool terminado = 1;
 }
 
 message EnviaRequest {
