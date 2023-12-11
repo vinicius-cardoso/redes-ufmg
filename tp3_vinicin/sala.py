@@ -107,7 +107,7 @@ def serve():
         print(f"Uso: {argv[0]} porto")
         return
 
-    porto = argv[1]
+    porto = int(argv[1])
 
     servidor = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     sala_pb2_grpc.add_SalaServicer_to_server(SalaServidor(), servidor)

@@ -78,7 +78,7 @@ def main():
         print(f'Uso: {argv[0]} id_cliente host port')
         return
 
-    id_cliente = argv[1]
+    id_cliente = int(argv[1])
     host = argv[2]
     porto = int(argv[3])
 
