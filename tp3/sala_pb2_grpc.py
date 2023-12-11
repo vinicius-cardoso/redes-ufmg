@@ -5,9 +5,8 @@ import grpc
 import sala_pb2 as sala__pb2
 
 
-class SalaStub(object):
-    """Definição do serviço para o servidor de bate-papo
-    """
+class salaStub(object):
+    """Missing associated documentation comment in .proto file."""
 
     def __init__(self, channel):
         """Constructor.
@@ -16,40 +15,39 @@ class SalaStub(object):
             channel: A grpc.Channel.
         """
         self.registra_entrada = channel.unary_unary(
-                '/sala.Sala/registra_entrada',
-                request_serializer=sala__pb2.RegistraEntradaRequest.SerializeToString,
-                response_deserializer=sala__pb2.RegistraResponse.FromString,
+                '/sala.sala/registra_entrada',
+                request_serializer=sala__pb2.canal_envio.SerializeToString,
+                response_deserializer=sala__pb2.qtd.FromString,
                 )
         self.registra_saida = channel.unary_unary(
-                '/sala.Sala/registra_saida',
-                request_serializer=sala__pb2.RegistraSaidaRequest.SerializeToString,
-                response_deserializer=sala__pb2.RegistraResponse.FromString,
+                '/sala.sala/registra_saida',
+                request_serializer=sala__pb2.exibidor.SerializeToString,
+                response_deserializer=sala__pb2.qtd.FromString,
                 )
         self.lista = channel.unary_unary(
-                '/sala.Sala/lista',
+                '/sala.sala/lista',
                 request_serializer=sala__pb2.Empty.SerializeToString,
-                response_deserializer=sala__pb2.UserList.FromString,
+                response_deserializer=sala__pb2.slista.FromString,
                 )
         self.finaliza_registro = channel.unary_unary(
-                '/sala.Sala/finaliza_registro',
+                '/sala.sala/finaliza_registro',
                 request_serializer=sala__pb2.Empty.SerializeToString,
-                response_deserializer=sala__pb2.TerminaResponse.FromString,
+                response_deserializer=sala__pb2.qtd.FromString,
                 )
         self.termina = channel.unary_unary(
-                '/sala.Sala/termina',
+                '/sala.sala/termina',
                 request_serializer=sala__pb2.Empty.SerializeToString,
-                response_deserializer=sala__pb2.TerminaResponse.FromString,
+                response_deserializer=sala__pb2.Empty.FromString,
                 )
         self.envia = channel.unary_unary(
-                '/sala.Sala/envia',
-                request_serializer=sala__pb2.EnviaRequest.SerializeToString,
-                response_deserializer=sala__pb2.EnviaResponse.FromString,
+                '/sala.sala/envia',
+                request_serializer=sala__pb2.envio.SerializeToString,
+                response_deserializer=sala__pb2.qtd.FromString,
                 )
 
 
-class SalaServicer(object):
-    """Definição do serviço para o servidor de bate-papo
-    """
+class salaServicer(object):
+    """Missing associated documentation comment in .proto file."""
 
     def registra_entrada(self, request, context):
         """Missing associated documentation comment in .proto file."""
@@ -88,48 +86,47 @@ class SalaServicer(object):
         raise NotImplementedError('Method not implemented!')
 
 
-def add_SalaServicer_to_server(servicer, server):
+def add_salaServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'registra_entrada': grpc.unary_unary_rpc_method_handler(
                     servicer.registra_entrada,
-                    request_deserializer=sala__pb2.RegistraEntradaRequest.FromString,
-                    response_serializer=sala__pb2.RegistraResponse.SerializeToString,
+                    request_deserializer=sala__pb2.canal_envio.FromString,
+                    response_serializer=sala__pb2.qtd.SerializeToString,
             ),
             'registra_saida': grpc.unary_unary_rpc_method_handler(
                     servicer.registra_saida,
-                    request_deserializer=sala__pb2.RegistraSaidaRequest.FromString,
-                    response_serializer=sala__pb2.RegistraResponse.SerializeToString,
+                    request_deserializer=sala__pb2.exibidor.FromString,
+                    response_serializer=sala__pb2.qtd.SerializeToString,
             ),
             'lista': grpc.unary_unary_rpc_method_handler(
                     servicer.lista,
                     request_deserializer=sala__pb2.Empty.FromString,
-                    response_serializer=sala__pb2.UserList.SerializeToString,
+                    response_serializer=sala__pb2.slista.SerializeToString,
             ),
             'finaliza_registro': grpc.unary_unary_rpc_method_handler(
                     servicer.finaliza_registro,
                     request_deserializer=sala__pb2.Empty.FromString,
-                    response_serializer=sala__pb2.TerminaResponse.SerializeToString,
+                    response_serializer=sala__pb2.qtd.SerializeToString,
             ),
             'termina': grpc.unary_unary_rpc_method_handler(
                     servicer.termina,
                     request_deserializer=sala__pb2.Empty.FromString,
-                    response_serializer=sala__pb2.TerminaResponse.SerializeToString,
+                    response_serializer=sala__pb2.Empty.SerializeToString,
             ),
             'envia': grpc.unary_unary_rpc_method_handler(
                     servicer.envia,
-                    request_deserializer=sala__pb2.EnviaRequest.FromString,
-                    response_serializer=sala__pb2.EnviaResponse.SerializeToString,
+                    request_deserializer=sala__pb2.envio.FromString,
+                    response_serializer=sala__pb2.qtd.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'sala.Sala', rpc_method_handlers)
+            'sala.sala', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
  # This class is part of an EXPERIMENTAL API.
-class Sala(object):
-    """Definição do serviço para o servidor de bate-papo
-    """
+class sala(object):
+    """Missing associated documentation comment in .proto file."""
 
     @staticmethod
     def registra_entrada(request,
@@ -142,9 +139,9 @@ class Sala(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/sala.Sala/registra_entrada',
-            sala__pb2.RegistraEntradaRequest.SerializeToString,
-            sala__pb2.RegistraResponse.FromString,
+        return grpc.experimental.unary_unary(request, target, '/sala.sala/registra_entrada',
+            sala__pb2.canal_envio.SerializeToString,
+            sala__pb2.qtd.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -159,9 +156,9 @@ class Sala(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/sala.Sala/registra_saida',
-            sala__pb2.RegistraSaidaRequest.SerializeToString,
-            sala__pb2.RegistraResponse.FromString,
+        return grpc.experimental.unary_unary(request, target, '/sala.sala/registra_saida',
+            sala__pb2.exibidor.SerializeToString,
+            sala__pb2.qtd.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -176,9 +173,9 @@ class Sala(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/sala.Sala/lista',
+        return grpc.experimental.unary_unary(request, target, '/sala.sala/lista',
             sala__pb2.Empty.SerializeToString,
-            sala__pb2.UserList.FromString,
+            sala__pb2.slista.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -193,9 +190,9 @@ class Sala(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/sala.Sala/finaliza_registro',
+        return grpc.experimental.unary_unary(request, target, '/sala.sala/finaliza_registro',
             sala__pb2.Empty.SerializeToString,
-            sala__pb2.TerminaResponse.FromString,
+            sala__pb2.qtd.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -210,9 +207,9 @@ class Sala(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/sala.Sala/termina',
+        return grpc.experimental.unary_unary(request, target, '/sala.sala/termina',
             sala__pb2.Empty.SerializeToString,
-            sala__pb2.TerminaResponse.FromString,
+            sala__pb2.Empty.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -227,8 +224,8 @@ class Sala(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/sala.Sala/envia',
-            sala__pb2.EnviaRequest.SerializeToString,
-            sala__pb2.EnviaResponse.FromString,
+        return grpc.experimental.unary_unary(request, target, '/sala.sala/envia',
+            sala__pb2.envio.SerializeToString,
+            sala__pb2.qtd.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
