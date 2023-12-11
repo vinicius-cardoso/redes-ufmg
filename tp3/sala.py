@@ -7,7 +7,7 @@ import exibe_pb2_grpc as exibidor_rpc
 from concurrent import futures
 import threading
 
-class SalaServidor(rpc.salaServicer):
+class SalaServidor(rpc.SalaServicer):
     def __init__(self, evento_parada):
         self.entradas = []
         self.saidas: {str: (str, str, str)} = {}
@@ -82,7 +82,7 @@ def main():
 
     evento_parada = threading.Event()
     servidor = grpc.server(futures.ThreadPoolExecutor())
-    rpc.add_salaServicer_to_server(SalaServidor(evento_parada), servidor)
+    rpc.add_SalaServicer_to_server(SalaServidor(evento_parada), servidor)
     servidor.add_insecure_port('[::]:' + numero_porto)
     servidor.start()
     servidor.wait_for_termination()

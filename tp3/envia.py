@@ -24,6 +24,12 @@ class Cliente:
     
     def finaliza_registro(self):
         return self.conexao.finaliza_registro(metadata=[('id', self.id)])
+    
+    def termina(self):
+        return self.conexao.termina()
+    
+    def lista(self):
+        return self.conexao.lista()
 
 
 def main():
@@ -42,13 +48,13 @@ def main():
             destino, mensagem = comando[1], comando[2]
             qtd = cliente.enviar(destino, mensagem)
             print(qtd)
-            pass
         elif comando[0] == 'L':
-            pass
+            for id, tipo in cliente.lista():
+                print(id, tipo)
         elif comando[0] == 'F':
-            pass
+            cliente.finaliza_registro()
         elif comando[0] == 'T':
-            pass
+            cliente.termina()
     
     
 
