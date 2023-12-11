@@ -28,10 +28,10 @@ class Cliente:
         return self.conexao.finaliza_registro(metadata=[('id', self.id)])
     
     def termina(self):
-        return self.conexao.termina()
+        return self.conexao.termina(chat.Empty())
     
     def lista(self):
-        return self.conexao.lista()
+        return self.conexao.lista(chat.Empty())
 
 
 def main():
@@ -57,8 +57,7 @@ def main():
             qtd = cliente.enviar(destino, mensagem)
             print(qtd)
         elif comando[0] == 'L':
-            for id, tipo in cliente.lista():
-                print(id, tipo)
+            print(cliente.lista())
         elif comando[0] == 'F':
             cliente.finaliza_registro()
         elif comando[0] == 'T':

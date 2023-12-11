@@ -19,65 +19,84 @@ class SalaServidor(rpc.SalaServicer):
         resposta = chat.qtd()
         
         if request.id in self.entradas:
-            resposta.quantidade =  -1
+            resposta.quantidade = -1
         else:
             self.entradas.append(request.id)
-            resposta.quantidade =  len(self.entradas)
+            resposta.quantidade = len(self.entradas)
 
         return resposta
     
     def registra_saida(self, request, context):
+        resposta = chat.qtd()
+        
         if request.id in self.saidas:
-            return -1
+            resposta.quantidade = -1
         else:
             endereco = '[::]:' + request.port
             canal = grpc.insecure_channel(endereco)
             conexao = exibidor_rpc.exibeStub(canal)
             self.saidas[request.fqdn] = (endereco, conexao, request.id)
-            return len(self.saidas)
+            resposta.quantidade = len(self.saidas)
+
+        return resposta
     
     def lista(self, request, context):
+        resposta = chat.slista()
+        resposta.lista_id = ''
+
         ids_tipos = []
         for id in self.entradas:
             ids_tipos.append((id, "entrada"))
         for (_, _, id) in self.saidas.values():
             ids_tipos.append((id, "saidas"))
-        return ids_tipos
+
+        for id_, tipo in ids_tipos:
+            resposta.lista_id += (id_ + ' ' + tipo + '\n')
+
+        return resposta
+        
     
     def finaliza_registro(self, request, context):
+        resposta = chat.qtd()
+
         id = dict(context.invocation_metadata()).get('id')
         self.entradas.remove(id)
 
         for fqdn, _, _, id_saida in self.saidas.items():
             if id_saida == id:
                 self.saidas.pop(fqdn)
-                return 1
+                resposta.quantidade = 1
             
-        return 0
+        resposta.quantidade = 0
+        return resposta
     
     def termina(self, request, context):
+        resposta = chat.Empty()
+
         for (_, conexao, _) in self.saidas.values():
-            conexao.termina()
+            conexao.termina(exibidor.Empty())
         self.evento_parada.set()
-        return
+        return resposta
     
     def envia(self, request, context):
         envio = exibidor.mensagem()
         envio.origem = context.peer()
         envio.smensagem = request.msg
 
+        resposta = chat.qtd()
+
         if request.destino == "todos":
             for (_, conexao, _) in self.saidas.values():
                 conexao.exibe(envio)
-            qtd = len(self.saidas)
+            resposta.quantidade = len(self.saidas)
         else:
             destino = self.saidas.get(request.destino)
             if destino:
                 destino[1].exibe(envio)
-                qtd = 1
+                resposta.quantidade = 1
             else:
-                qtd = 0
-        return qtd
+                resposta.quantidade = 0
+        return resposta
 
 def main():
     
