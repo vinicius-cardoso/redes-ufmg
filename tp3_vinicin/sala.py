@@ -2,96 +2,119 @@ from sys import argv
 import grpc
 import sala_pb2
 import sala_pb2_grpc
-import exibe_pb2 as exibidor
-import exibe_pb2_grpc as exibidor_rpc
+import exibe_pb2
+import exibe_pb2_grpc
 from concurrent import futures
-import threading
 
-class SalaServidor(sala_pb2_grpc.salaServicer):
-    def __init__(self, evento_parada):
-        self.entradas = {}
-        self.saidas: {str: (str, str, str)} = {}
-        self.evento_parada = evento_parada
+class SalaServidor(sala_pb2_grpc.SalaServicer):
+    def __init__(self):
+        self.usuarios = {}
 
     def registra_entrada(self, request, context):
         id = request.id
 
-        if id in self.entradas:
+        if id in self.usuarios:
             return sala_pb2.RegistraResponse(quantidade_programas=-1)
         else:
-            self.entradas[id] = True
+            self.usuarios[id] = ('entrada', None)
 
             return sala_pb2.RegistraResponse(
-                quantidade_programas=len(self.entradas)
+                quantidade_programas=len(self.usuarios)
             )
-    
+
     def registra_saida(self, request, context):
         id = request.id
         fqdn = request.fqdn
         port = request.port
 
-        if id in self.entradas:
+        if id in self.usuarios:
             return sala_pb2.RegistraResponse(quantidade_programas=-1)
         else:
-            self.saidas[id] = ('saida', (fqdn, port))
-            endereco = '[::]:' + request.port
-            canal = grpc.insecure_channel(endereco)
-            conexao = exibidor_rpc.exibeStub(canal)
-            self.saidas[request.fqdn] = (endereco, conexao, request.id)
-            return len(self.saidas)
-    
+            self.usuarios[id] = ('saida', (fqdn, port))
+
+            return sala_pb2.RegistraResponse(
+                numero_programas=len(self.usuarios)
+            )
+
     def lista(self, request, context):
-        ids_tipos = []
-        for id in self.entradas:
-            ids_tipos.append((id, "entrada"))
-        for (_, _, id) in self.saidas.values():
-            ids_tipos.append((id, "saidas"))
-        return ids_tipos
-    
+        usuarios = [id for id in self.usuarios]
+
+        return sala_pb2.UserList(usuarios=usuarios)
+
     def finaliza_registro(self, request, context):
-        # enunciado manda remover registro de quem chamou
-        # a chamada não informa o id do cliente
-        # o registro só armazena o id do cliente (no caso de entradas)
-        return super().finaliza_registro(request, context)
-    
-    def termina(self, request, context):
-        for (_, conexao, _) in self.saidas.values():
-            conexao.termina()
-        self.evento_parada.set()
-        return
-    
-    def envia(self, request, context):
-        envio = exibidor.mensagem()
-        envio.origem = context.peer()
-        envio.smensagem = request.msg
+        id = request.id
 
-        if request.destino == "todos":
-            for (_, conexao, _) in self.saidas.values():
-                conexao.exibe(envio)
-            qtd = len(self.saidas)
+        if id in self.usuarios:
+            del self.registrados_entrada[id]
+            return sala_pb2.TerminaResponse(terminado=True)
         else:
-            destino = self.saidas.get(request.destino)
-            if destino:
-                destino[1].exibe(envio)
-                qtd = 1
-            else:
-                qtd = 0
-        return qtd
+            return sala_pb2.TerminaResponse(terminado=False)
 
-def main():
+    def termina(self, request, context):
+        for id, usuario in self.usuarios.items():
+            tipo, dados = usuario
+
+            if tipo == 'saida':
+                fqdn, port = dados
+
+                # Encerra os exibidores
+                try:
+                    with grpc.insecure_channel(f'{fqdn}:{port}') as channel:
+                        stub = exibe_pb2_grpc.ExibeStub(channel)
+                        stub.termina(exibe_pb2.Empty())
+                except Exception as e:
+                    print(f"Erro ao encerrar o exibidor {id}: {e}")
+                    return sala_pb2.TerminaResponse(terminado=False)
+        
+        # Encerra o servidor
+        context.abort(grpc.StatusCode.OK, "Servidor terminado")
+
+        return sala_pb2.TerminaResponse(terminado=True)
+
+    def envia(self, request, context):
+        destino = request.destino
+        msg = request.msg
+        vezes_enviada = 0
+
+        if destino == 'todos':
+            # Enviar para todos os exibidores
+            for id, usuario in self.usuarios.items():
+                tipo, dados = usuario
+
+                if tipo == 'saida':
+                    fqdn, port = dados
+                    self._enviar_para_exibidor(fqdn, port, msg)
+                    vezes_enviada += 1
+        else:
+            # Enviar para um exibidor específico
+            if destino in self.usuarios and self.usuarios[destino][0] == 'saida':
+                fqdn, port = self.usuarios[destino][1]
+                self._enviar_para_exibidor(fqdn, port, msg)
+                vezes_enviada = 1
+
+        return sala_pb2.EnviaResponse(vezes_enviada=vezes_enviada)
+
+    def _enviar_para_exibidor(self, fqdn, port, msg):
+        try:
+            with grpc.insecure_channel(f'{fqdn}:{port}') as channel:
+                stub = exibe_pb2_grpc.ExibeStub(channel)
+                stub.exibe(exibe_pb2.ExibeRequest(msg=msg, origem='Servidor'))
+        except Exception as e:
+            print(f'Erro ao enviar para exibidor {fqdn}:{port}: {e}')
+
+def serve():
     if len(argv) != 2:
-        print(f"Uso: {argv[0]} numero_porto")
+        print(f"Uso: {argv[0]} porto")
         return
 
-    numero_porto = argv[1]
+    porto = argv[1]
 
-    evento_parada = threading.Event()
-    servidor = grpc.server(futures.ThreadPoolExecutor())
-    rpc.add_ChatServerServicer_to_server(SalaServidor(evento_parada), servidor)
-    servidor.add_insecure_port('[::]:' + numero_porto)
+    servidor = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    sala_pb2_grpc.add_SalaServicer_to_server(SalaServidor(), servidor)
+    servidor.add_insecure_port(f'[::]:{porto}')
     servidor.start()
+    print("Servidor de Sala iniciado.")
     servidor.wait_for_termination()
-    servidor.stop(0)
 
 if __name__ == "__main__":
-    main()
+    serve()
