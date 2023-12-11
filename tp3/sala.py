@@ -39,10 +39,15 @@ class SalaServidor(rpc.salaServicer):
         return ids_tipos
     
     def finaliza_registro(self, request, context):
-        # enunciado manda remover registro de quem chamou
-        # a chamada não informa o id do cliente
-        # o registro só armazena o id do cliente (no caso de entradas)
-        return super().finaliza_registro(request, context)
+        id = dict(context.invocation_metadata()).get('id')
+        self.entradas.remove(id)
+
+        for fqdn, _, _, id_saida in self.saidas.items():
+            if id_saida == id:
+                self.saidas.pop(fqdn)
+                return 1
+            
+        return 0
     
     def termina(self, request, context):
         for (_, conexao, _) in self.saidas.values():

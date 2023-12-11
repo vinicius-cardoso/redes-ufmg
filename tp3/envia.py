@@ -21,6 +21,9 @@ class Cliente:
         envio.destino = destino
         envio.msg = mensagem
         return self.conexao.envia(envio)
+    
+    def finaliza_registro(self):
+        return self.conexao.finaliza_registro(metadata=[('id', self.id)])
 
 
 def main():
