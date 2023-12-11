@@ -1,4 +1,10 @@
+import grpc
+import exibe_pb2
+import exibe_pb2_grpc
 from sys import argv
+
+class Exibe():
+    pass
 
 def main():
     if len(argv) != 5:

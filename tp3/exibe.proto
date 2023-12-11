@@ -3,7 +3,7 @@ syntax = "proto3";
 package exibe;
 
 // Definição do serviço para o servidor de exibição
-service exibe {
+service Exibe {
     rpc exibe(ExibeRequest) returns (ExibeResponse) {}
     rpc termina(Empty) returns (ExibeResponse) {}
 }

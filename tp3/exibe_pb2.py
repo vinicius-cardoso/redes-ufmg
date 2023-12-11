@@ -14,7 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0b\x65xibe.proto\x12\x05\x65xibe\"+\n\x0c\x45xibeRequest\x12\x0b\n\x03msg\x18\x01 \x01(\t\x12\x0e\n\x06origem\x18\x02 \x01(\t\"!\n\rExibeResponse\x12\x10\n\x08response\x18\x01 \x01(\x05\"\x07\n\x05\x45mpty2n\n\x05\x65xibe\x12\x34\n\x05\x65xibe\x12\x13.exibe.ExibeRequest\x1a\x14.exibe.ExibeResponse\"\x00\x12/\n\x07termina\x12\x0c.exibe.Empty\x1a\x14.exibe.ExibeResponse\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0b\x65xibe.proto\x12\x05\x65xibe\"+\n\x0c\x45xibeRequest\x12\x0b\n\x03msg\x18\x01 \x01(\t\x12\x0e\n\x06origem\x18\x02 \x01(\t\"!\n\rExibeResponse\x12\x10\n\x08response\x18\x01 \x01(\x05\"\x07\n\x05\x45mpty2n\n\x05\x45xibe\x12\x34\n\x05\x65xibe\x12\x13.exibe.ExibeRequest\x1a\x14.exibe.ExibeResponse\"\x00\x12/\n\x07termina\x12\x0c.exibe.Empty\x1a\x14.exibe.ExibeResponse\"\x00\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
