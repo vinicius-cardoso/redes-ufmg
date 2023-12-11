@@ -7,6 +7,8 @@ import exibe_pb2_grpc as exibidor_rpc
 from concurrent import futures
 import threading
 
+import logging
+
 class SalaServidor(rpc.SalaServicer):
     def __init__(self, evento_parada):
         self.entradas = []
@@ -14,11 +16,15 @@ class SalaServidor(rpc.SalaServicer):
         self.evento_parada = evento_parada
 
     def registra_entrada(self, request, context):
+        resposta = chat.qtd()
+        
         if request.id in self.entradas:
-            return -1
+            resposta.quantidade =  -1
         else:
             self.entradas.append(request.id)
-            return len(self.entradas)
+            resposta.quantidade =  len(self.entradas)
+
+        return resposta
     
     def registra_saida(self, request, context):
         if request.id in self.saidas:
@@ -74,6 +80,12 @@ class SalaServidor(rpc.SalaServicer):
         return qtd
 
 def main():
+    
+    logging.basicConfig(level=logging.DEBUG)
+
+    logger = logging.getLogger('grpc')
+    logger.setLevel(logging.DEBUG)
+
     if len(argv) != 2:
         print(f"Uso: {argv[0]} numero_porto")
         return

@@ -3,13 +3,15 @@ import grpc
 import sala_pb2 as chat
 import sala_pb2_grpc as rpc
 
+import logging
+
 class Cliente:
     def __init__(self, id, endereco, porto):
         self.id = id
         self.nome = endereco
         self.porto = porto
         canal = grpc.insecure_channel(endereco + ':' + porto)
-        self.conexao = rpc.salaStub(canal)
+        self.conexao = rpc.SalaStub(canal)
 
     def registrar(self):
         canal_envio = chat.canal_envio()
@@ -33,6 +35,12 @@ class Cliente:
 
 
 def main():
+    
+    logging.basicConfig(level=logging.DEBUG)
+
+    logger = logging.getLogger('grpc')
+    logger.setLevel(logging.DEBUG)
+
     if len(argv) != 4:
         print(f"Uso: {argv[0]} id_cliente nome_host num_porto")
         return
