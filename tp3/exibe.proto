@@ -2,17 +2,20 @@ syntax = "proto3";
 
 package exibe;
 
+// Definição do serviço para o servidor de exibição
 service exibe {
-  rpc exibe(mensagem) returns (Empty) {}
-
-  rpc termina(Empty) returns (Empty) {}
+    rpc exibe(ExibeRequest) returns (ExibeResponse) {}
+    rpc termina(Empty) returns (ExibeResponse) {}
 }
 
-message mensagem {
-  string smensagem = 1;
+// Mensagens utilizadas
+message ExibeRequest {
+  string msg = 1;
   string origem = 2;
 }
 
-message Empty {
-
+message ExibeResponse {
+    int32 response = 1;
 }
+
+message Empty {}

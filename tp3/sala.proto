@@ -2,43 +2,46 @@ syntax = "proto3";
 
 package sala;
 
-service sala {
-  rpc registra_entrada(canal_envio) returns (qtd) {}
-
-  rpc registra_saida(exibidor) returns (qtd) {}
-
-  rpc lista(Empty) returns (slista) {}
-
-  rpc finaliza_registro(Empty) returns (qtd) {}
-
-  rpc termina(Empty) returns (Empty) {}
-
-  rpc envia(envio) returns (qtd) {}
+// Definição do serviço para o servidor de bate-papo
+service Sala {
+    rpc registra_entrada(RegistraEntradaRequest) returns (RegistraResponse) {}
+    rpc registra_saida(RegistraSaidaRequest) returns (RegistraResponse) {}
+    rpc lista(Empty) returns (UserList) {}
+    rpc finaliza_registro(Empty) returns (TerminaResponse) {}
+    rpc termina(Empty) returns (TerminaResponse) {}
+    rpc envia(EnviaRequest) returns (EnviaResponse) {}
 }
 
-message qtd {
-  int32 quantidade = 1;
+// Mensagens utilizadas
+message RegistraEntradaRequest {
+    string id = 1;
 }
 
-message slista {
-  string lista_id = 1;
+message RegistraSaidaRequest {
+    string id = 1;
+    string fqdn = 2;
+    int32 port = 3;
 }
 
-message canal_envio {
-  string id = 1;
+message RegistraResponse {
+    int32 quantidade_programas = 1;
 }
 
-message exibidor {
-  string id = 1;
-  string fqdn = 2;
-  int32 port = 3;
+message Empty {}
+
+message UserList {
+    repeated string usuarios = 1;
 }
 
-message envio {
-  string msg = 1;
-  string destino = 2;
+message TerminaResponse {
+    int32 response = 1;
 }
 
-message Empty {
+message EnviaRequest {
+    string msg = 1;
+    string destino = 2;
+}
 
+message EnviaResponse {
+    int32 contador = 1;
 }
