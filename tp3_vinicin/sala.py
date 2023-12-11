@@ -33,7 +33,7 @@ class SalaServidor(sala_pb2_grpc.SalaServicer):
             self.usuarios[id] = ('saida', (fqdn, port))
 
             return sala_pb2.RegistraResponse(
-                numero_programas=len(self.usuarios)
+                quantidade_programas=len(self.usuarios)
             )
 
     def lista(self, request, context):
@@ -45,7 +45,7 @@ class SalaServidor(sala_pb2_grpc.SalaServicer):
         id = request.id
 
         if id in self.usuarios:
-            del self.registrados_entrada[id]
+            del self.usuarios[id]
             return sala_pb2.TerminaResponse(terminado=True)
         else:
             return sala_pb2.TerminaResponse(terminado=False)

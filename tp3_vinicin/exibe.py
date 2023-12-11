@@ -21,7 +21,7 @@ class Exibe(exibe_pb2_grpc.ExibeServicer):
     
     def termina(self, request, response):
         # Encerrar a execução do servidor
-        self.server_terminado = True
+        self.is_terminado = True
         print("Servidor de exibição encerrando...")
 
         return exibe_pb2.ExibeResponse(response=0)     

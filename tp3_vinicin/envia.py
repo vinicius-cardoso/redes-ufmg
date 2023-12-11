@@ -80,7 +80,7 @@ def main():
 
     id_cliente = argv[1]
     host = argv[2]
-    porto = argv[3]
+    porto = int(argv[3])
 
     cliente = Cliente(id_cliente, host, porto)
 
