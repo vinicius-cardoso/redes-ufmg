@@ -7,29 +7,60 @@
             "request": "launch",
             "program": "${workspaceFolder}/sala.py",
             "console": "integratedTerminal",
-            "args": ["50051"]
+            "args": ["5000"]
         },
         {
-            "name": "Python: Envio",
+            "name": "Python: Envio1",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/envia.py",
             "console": "integratedTerminal",
-            "args": ["2", "localhost", "50051"]
+            "args": ["participante1", "localhost", "5000"]
         },
         {
-            "name": "Python: Exibição",
+            "name": "Python: Envio2",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/envia.py",
+            "console": "integratedTerminal",
+            "args": ["participante2", "localhost", "5000"]
+        },
+        {
+            "name": "Python: Exibição1",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/exibe.py",
             "console": "integratedTerminal",
-            "args": ["1", "50052", "localhost", "50051"]
+            "args": ["participante1", "6001", "localhost", "5000"]
+        },
+        {
+            "name": "Python: Exibição2",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/exibe.py",
+            "console": "integratedTerminal",
+            "args": ["participante2", "6002", "localhost", "5000"]
+        },
+        {
+            "name": "Python: Exibição3",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/exibe.py",
+            "console": "integratedTerminal",
+            "args": ["participante3", "6003", "viniciusc", "5000"]
         }
     ],
     "compounds": [
         {
             "name": "Iniciar Todos os Scripts",
-            "configurations": ["Python: Sala", "Python: Envio", "Python: Exibição"]
+            "configurations": [
+                "Python: Sala", 
+                "Python: Envio1", 
+                "Python: Envio2", 
+                "Python: Exibição1", 
+                "Python: Exibição2", 
+                "Python: Exibição3"
+            ]
         }
     ]
 }

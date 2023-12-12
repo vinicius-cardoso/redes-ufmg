@@ -16,7 +16,6 @@ class Cliente:
         return self.stub.registra_entrada(
             sala_pb2.RegistraEntradaRequest(id=self.id_cliente)
         )
-        # self.stub.registra_entrada(sala_pb2.RegistraEntradaRequest(id=self.id_cliente))
 
     def registra_saida(self, port):
         fqdn = socket.getfqdn()
@@ -44,7 +43,7 @@ class Cliente:
     def processa_comandos(self):
         try:
             while True:
-                print('Comandos:')
+                print('\nComandos:')
                 print('- M,destino,mensagem: Envia uma mensagem para o destino') 
                 print('- L: Lista os programas registrados no servidor') 
                 print('- F: Finaliza um servidor de envio ou exibição específico') 

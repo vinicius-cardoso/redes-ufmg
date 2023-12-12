@@ -13,7 +13,8 @@ class SalaServidor(sala_pb2_grpc.SalaServicer):
     def registra_entrada(self, request, context):
         id = request.id
 
-        if id in self.usuarios:
+        # Verifica se o ID existe e se é um cliente de entrada
+        if id in self.usuarios and self.usuarios[id][0] == 'entrada':
             return sala_pb2.RegistraResponse(quantidade_programas=-1)
         else:
             self.usuarios[id] = ('entrada', None)
@@ -27,11 +28,11 @@ class SalaServidor(sala_pb2_grpc.SalaServicer):
         fqdn = request.fqdn
         port = request.port
 
-        if id in self.usuarios:
+        # Verifica se o ID existe e se é um cliente de saída
+        if id in self.usuarios and self.usuarios[id][0] == 'saida':
             return sala_pb2.RegistraResponse(quantidade_programas=-1)
         else:
             self.usuarios[id] = ('saida', (fqdn, port))
-
             return sala_pb2.RegistraResponse(
                 quantidade_programas=len(self.usuarios)
             )
@@ -92,7 +93,7 @@ class SalaServidor(sala_pb2_grpc.SalaServicer):
                 self._enviar_para_exibidor(fqdn, port, msg)
                 vezes_enviada = 1
 
-        return sala_pb2.EnviaResponse(vezes_enviada=vezes_enviada)
+        return sala_pb2.EnviaResponse(contador=vezes_enviada)
 
     def _enviar_para_exibidor(self, fqdn, port, msg):
         try:
