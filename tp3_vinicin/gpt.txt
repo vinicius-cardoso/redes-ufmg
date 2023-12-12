@@ -1,0 +1,594 @@
+Dada a descrição abaixo, verifique se os programas que eu informar o nome e o conteúdo atendem a proposta da descrição.
+
+descrição:
+"""
+Trabalho prático 3: RPCtalk - uma sala de bate-papo implementada com gRPC
+--------------------------------------------------------------------------------
+Objetivo:
+--------------------------------------------------------------------------------
+
+O objetivo deste trabalho é implementar um sistema simples de troca de 
+mensagens de bate-papo utilizando chamadas de procedimentos remotos (RPC).
+Para isso, os alunos deverão utilizar o framework gRPC, um dos mais adotados 
+para esse fim, usando a linguagem Python. Um bom ponto para começar é a página 
+https://grpc.io/docs/languages/python/quickstart/ e o tutorial em 
+https://grpc.io/docs/languages/python/basics/.
+
+--------------------------------------------------------------------------------
+Os programas:
+--------------------------------------------------------------------------------
+
+Três programas devem ser desenvolvidos: 
+- um programa servidor que será responsável pelo controle da troca de mensagens 
+na sala de bate-papo, 
+- um programa exibidor para mostrar as mensagens recebidas e 
+- um programa leitor de teclado para envio de mensagens.
+
+Em um sistema profissional os programas exibidores e emissores poderiam ser 
+construídos como um único programa que integrasse as funções de leitura de 
+teclado, exibição na tela e comunicação na rede. No nosso caso, dois programa 
+separados simplificarão sensivelmente o trabalho de implementação.
+
+--------------------------------------------------------------------------------
+O servidor de bate-papo:
+--------------------------------------------------------------------------------
+
+O programa responsável por controlar a troca de mensagens deverá ser executado 
+como um servidor de RPC tradicional (exceto quando ele precisar interagir com 
+os programas exibidores), como será detalhado a seguir:
+
+O código deve estar contido em um arquivo denominado sala.py e deve receber 
+como parâmetro de linha de comando apenas o número do porto onde ele deve se 
+conectar. A interface de RPCs implementada por esse servidor deve ser descrita 
+no arquivo sala.porto e deve conter os seguintes métodos:
+- registra_entrada(char id[16]) - registra com o servidor um programa de envio 
+de mensagens identificado pelo string id, retornando -1 se já existir um 
+programa de envio com aquele identificador, ou o número de programas daquele 
+tipo registrados até aquele momento (incluindo o programa que está se 
+registrando);
+- registra_saida(char id[16], char fqdn[256], short int port) - registra com o 
+servidor um programa exibidor identificado pelo string id, guardando o nome do 
+host (fqdn) e o número do porto onde aquele exibidor pode ser contactado, 
+retornando -1 se já existir um programa exibidor (com aquele identificador), ou 
+o número de programas exibidores registrados até aquele momento (incluindo o 
+programa que está se registrando);
+- lista() - retorna uma lista com os identificadores e tipos de todos os 
+programas registrados no servidor até aquele momento;
+- finaliza_registro() - remove o registro do programa que chama o método e, se 
+existe um exibidor com o mesmo identificador. Ele também remove seu registro e 
+faz uma chamada para o método termina() daquele programa, retornando 1 se havia 
+um exibidor, ou 0 caso contrário;
+- termina() - termina a execução do servidor, chamando primeiro o método 
+termina() de todos os programas de exibição registrados (não executa nenhuma 
+função nos programas de envio);
+- envia(char msg[128],char destino[16]) - se o destino for igual a "todos", 
+envia a mensagem msg para todo programa exibidor registrado; caso contrário, 
+envia apenas para o exibidor com nome igual a destino, retornando o número de 
+vezes que a mensagem foi enviada (0 indica que o nome do identificador não foi 
+encontrado).
+
+O processo de terminar um servidor a partir de uma chamada de procedimento tem 
+um detalhe: é preciso terminar o processamento do procedimento chamado primeiro 
+e responder ao cliente, antes de concluir a execução. Mais detalhes sobre isso 
+serão fornecidos à frente.
+
+--------------------------------------------------------------------------------
+O cliente de envio de mensagens:
+--------------------------------------------------------------------------------
+
+Esse programa implementa a parte da interface do usuário que lê mensagens da 
+entrada padrão (stdin) e as envia para o servidor de bate-papo. Para isso, 
+basta que o cliente leia e processe linhas da entrada padrão e acione os 
+métodos do servidor de bate-papo usando a interface de RPCs definidas por ele. 
+
+O programa deve estar contido em um arquivo denominado envia.py e deve receber 
+como parâmetros o identificador do cliente (string de até 16 caracteres), o 
+nome do host e o número do porto onde executa o servidor de bate-papo. Depois 
+da sua inicialização, o programa deve se registrar no servidor usando o método 
+registra_entrada(), escrever na saída o valor retornado pelo servidor e passar 
+a ler e interpretar comandos das linhas da entrada, segundo o seguinte formato:
+- M,destino,mensagem - aciona o método de envia() do servidor de bate-papo 
+indicando o destino e uma string de mensagem e escreve na saída o valor 
+retornado;
+- L - consulta o servidor pela lista de programas registrados no servidor, 
+escrevendo de volta uma lista com tipos e nomes dos programas registrados;
+- F - termina a operação do programa de envio e de qualquer programa de 
+exibição que tenha o mesmo identificador;
+- T - termina a operação do servidor, terminando também todos os programas de 
+exibição registrados (não precisa fazer nada sobre os programas de envio).
+
+Linhas que não sigam nenhum desses padrões devem ser simplesmente ignoradas, 
+sem gerar qualquer mensagem.
+
+--------------------------------------------------------------------------------
+O servidor de exibição:
+--------------------------------------------------------------------------------
+
+O programa responsável por exibir as mensagens na saída padrão executa como um 
+servidor de RPC tradicional, exceto quando for preciso se registrar com o 
+servidor da sala. O código deve estar contido em um arquivo denominado exibe.py 
+e deve receber como parâmetros o identificador do cliente (string de até 16 
+caracteres), o número do porto onde o exibidor vai esperar por comandos, o nome 
+do host e o número do porto onde executa o servidor de bate-papo. Depois da sua 
+inicialização, o programa deve se registrar no servidor de bate-papo usando seu 
+método registra_saida(), fornecendo seu endereço e porto, escrever na saída o 
+valor retornado pelo servidor e passar a processar comandos da sua interface de 
+RPCs, definida no arquivo exibe.porto, que deve conter os seguintes métodos:
+- exibe(char msg[128], char origem[16]) - escreve na saída a mensagem, usando o 
+formato: 'Mensagem de {origem}: {msg}', retornando sempre zero;
+- termina() - retorna 0 e causa o fim da execução do programa, sem exibir 
+nenhuma mensagem.
+
+Nesse caso, vale a mesma observação feita para o servidor da sala: terminar a 
+execução por um procedimento remoto exige cuidados especiais!
+
+--------------------------------------------------------------------------------
+Requisitos não funcionais:
+--------------------------------------------------------------------------------
+
+O código deve usar apenas Python 3, sem bibliotecas além das consideradas 
+“padrão”. Não serão aceitas outras bibliotecas, nem o uso de recursos como E/S 
+assíncrona em Python. A ideia é que os programas sejam simples, mesmo. O código 
+deve observar exatamente o formato de saída descrito, para garantir a correção 
+automática. Programas que funcionem mas produzam saída fora do esperado serão 
+penalizados.
+
+O material desenvolvido por você deve executar sem erros nas máquinas linux do 
+laboratório de graduação. (Nelas, o comando para disparar o Python é python3). 
+A correção será feita naquelas máquinas: Programas que não executarem, não 
+seguirem as determinações quanto a nomes, parâmetros de entrada e formato da 
+saída, ou apresentarem erros durante a execução serão desconsiderados.
+
+--------------------------------------------------------------------------------
+
+Observações/lembretes:
+- Os programas devem escrever na saída apenas os valores indicados no enunciado.
+- Os servidores de sala de bate-papo não devem escrever nada na saída. Se forem 
+usadas mensagens de depuração durante o desenvolvimento, elas devem ser 
+removidas na versão entregue.
+- Os comandos nunca serão executados com formato/parâmetros errados.
+- Linhas que iniciem com letras que não definem comandos devem ser ignoradas.
+- Nenhum caso de teste tentará acessar um servidor que tenha sido terminado 
+anteriormente no mesmo teste - isto é, não é preciso testar se um servidor está 
+ativo antes de tentar contactá-lo, nem se preocupar em lidar com erros desse 
+tipo.
+- Um servidor de diretórios independente pode se registrar em mais de um 
+servidor de integração e um servidor de integração pode receber o registro de 
+mais de um servidor de diretórios.
+
+--------------------------------------------------------------------------------
+Referências úteis:
+--------------------------------------------------------------------------------
+
+Em um primeiro uso de gRPC, pode ser que vocês encontrem diversos pontos que 
+vão exigir um pouco mais de atenção no estudo da documentação para conseguir 
+fazer a implementação correta. 
+
+Consideramos que os pontos que podem dar mais trabalho e que merecem algumas 
+dicas são os seguintes:
+- Como identificar a máquina em que um programa está executando ?
+
+Usualmente, cada máquina operando em rede deve ter um nome pelo qual ela pode 
+ser identificada. Nesse exercício, o servidor de sala de bate-papo, ao 
+registrar um servidor de sala de bate-papo deve enviar a esse último o 
+seu nome, como um dos parâmetros da RPC utilizada. Esse nome pode ser obtido 
+pelo processo que executa o servidor de diretório usando a função getfqdn() 
+(fpdn = fully qualified domain name, ou o nome completo da máquina no domínio 
+de rede onde ela opera). 
+
+Assim, antes de iniciar o processamento de mensagens a serem exibidas, o 
+servidor de exibição deve usar aquela função para obter seu nome, que será 
+comunicado pela chamada do procedimento de registro no servidor de sala de 
+bate-papo. Esse link ilustra como usar a função getfqdn().
+
+- Manipulação de listas em uma chamada de procedimento:
+
+Cada framework de RPC tem sua forma de lidar com isso. Em Sun RPC/XDR, listas 
+eram representadas como vetores e deviam vir acompanhadas de um outro campo de 
+parâmetro que indicaria quantas posições realmente seriam usadas no vetor. Em 
+gRPC isso é relativamente mais simples, especialmente em Python: a definição do 
+parâmetro usa a palavra chave repeated e ele é manipulado exatamente como uma 
+lista. Esse link explica como a lista pode ser manipulada no cliente e no 
+servidor (em Python).
+
+- Desligar um servidor através de um RPC:
+
+Como mencionado anteriormente, fazer um servidor de RPC parar de funcionar 
+usando uma chamada de procedimento dele mesmo tem uma pegadinha: não basta 
+chamar um exit() enquanto se executa o código do procedimento, ou ele vai 
+terminar a execução antes de retornar da chamada, deixando o cliente sem 
+resposta. E normalmente só se pode escrever código dentro das chamadas, já que 
+não devemos alterar o código do stub. Cada framework de RPC tem uma solução 
+diferente para esse problema e a solução do gRPC é bastante elegante, exigindo 
+pouco código. Usa-se a geração de um evento dentro do código da RPC, que é 
+capturado pelo servidor. Pode parecer complicado, mas o código para se fazer 
+isso já está descrito no stackexchange.
+
+--------------------------------------------------------------------------------
+O que deve ser entregue:
+--------------------------------------------------------------------------------
+
+Cada aluno ou dupla deve entregar apenas os arquivos indicados neste enunciado,
+com os nomes:
+- sala.py - implementação do servidor de bate-papo
+- envia.py - implementação do cliente que lê mensagens do teclado
+- exibe.py - implementação do servidor de exibição de mensagens
+- sala.proto - definição da interface do servidor sala.py
+- exibe.proto - definição da interface do servidor exibe.py
+
+--------------------------------------------------------------------------------
+"""
+
+sala.proto:
+"""
+syntax = "proto3";
+
+package sala;
+
+// Definição do serviço para o servidor de bate-papo
+service Sala {
+    rpc registra_entrada(RegistraEntradaRequest) returns (RegistraResponse) {}
+    rpc registra_saida(RegistraSaidaRequest) returns (RegistraResponse) {}
+    rpc lista(Empty) returns (UserList) {}
+    rpc finaliza_registro(Empty) returns (TerminaResponse) {}
+    rpc termina(Empty) returns (TerminaResponse) {}
+    rpc envia(EnviaRequest) returns (EnviaResponse) {}
+}
+
+// Mensagens utilizadas
+message RegistraEntradaRequest {
+    string id = 1;
+}
+
+message RegistraSaidaRequest {
+    string id = 1;
+    string fqdn = 2;
+    int32 port = 3;
+}
+
+message RegistraResponse {
+    int32 quantidade_programas = 1;
+}
+
+message Empty {}
+
+message UserList {
+    repeated string usuarios = 1;
+}
+
+message TerminaResponse {
+    bool terminado = 1;
+}
+
+message EnviaRequest {
+    string msg = 1;
+    string destino = 2;
+}
+
+message EnviaResponse {
+    int32 contador = 1;
+}
+"""
+
+exibe.proto:
+"""
+syntax = "proto3";
+
+package exibe;
+
+// Definição do serviço para o servidor de exibição
+service Exibe {
+    rpc exibe(ExibeRequest) returns (ExibeResponse) {}
+    rpc termina(Empty) returns (ExibeResponse) {}
+}
+
+// Mensagens utilizadas
+message ExibeRequest {
+  string msg = 1;
+  string origem = 2;
+}
+
+message ExibeResponse {
+    int32 response = 1;
+}
+
+message Empty {}
+"""
+
+sala.py:
+"""
+from sys import argv
+import grpc
+import sala_pb2
+import sala_pb2_grpc
+import exibe_pb2
+import exibe_pb2_grpc
+from concurrent import futures
+
+class SalaServidor(sala_pb2_grpc.SalaServicer):
+    def __init__(self):
+        self.usuarios = {}
+
+    def registra_entrada(self, request, context):
+        id = request.id
+
+        if id in self.usuarios:
+            return sala_pb2.RegistraResponse(quantidade_programas=-1)
+        else:
+            self.usuarios[id] = ('entrada', None)
+
+            return sala_pb2.RegistraResponse(
+                quantidade_programas=len(self.usuarios)
+            )
+
+    def registra_saida(self, request, context):
+        id = request.id
+        fqdn = request.fqdn
+        port = request.port
+
+        if id in self.usuarios:
+            return sala_pb2.RegistraResponse(quantidade_programas=-1)
+        else:
+            self.usuarios[id] = ('saida', (fqdn, port))
+
+            return sala_pb2.RegistraResponse(
+                quantidade_programas=len(self.usuarios)
+            )
+
+    def lista(self, request, context):
+        usuarios = [id for id in self.usuarios]
+
+        return sala_pb2.UserList(usuarios=usuarios)
+
+    def finaliza_registro(self, request, context):
+        id = request.id
+
+        if id in self.usuarios:
+            del self.usuarios[id]
+            return sala_pb2.TerminaResponse(terminado=True)
+        else:
+            return sala_pb2.TerminaResponse(terminado=False)
+
+    def termina(self, request, context):
+        for id, usuario in self.usuarios.items():
+            tipo, dados = usuario
+
+            if tipo == 'saida':
+                fqdn, port = dados
+
+                # Encerra os exibidores
+                try:
+                    with grpc.insecure_channel(f'{fqdn}:{port}') as channel:
+                        stub = exibe_pb2_grpc.ExibeStub(channel)
+                        stub.termina(exibe_pb2.Empty())
+                except Exception as e:
+                    print(f"Erro ao encerrar o exibidor {id}: {e}")
+                    return sala_pb2.TerminaResponse(terminado=False)
+        
+        # Encerra o servidor
+        context.abort(grpc.StatusCode.OK, "Servidor terminado")
+
+        return sala_pb2.TerminaResponse(terminado=True)
+
+    def envia(self, request, context):
+        destino = request.destino
+        msg = request.msg
+        vezes_enviada = 0
+
+        if destino == 'todos':
+            # Enviar para todos os exibidores
+            for id, usuario in self.usuarios.items():
+                tipo, dados = usuario
+
+                if tipo == 'saida':
+                    fqdn, port = dados
+                    self._enviar_para_exibidor(fqdn, port, msg)
+                    vezes_enviada += 1
+        else:
+            # Enviar para um exibidor específico
+            if destino in self.usuarios and self.usuarios[destino][0] == 'saida':
+                fqdn, port = self.usuarios[destino][1]
+                self._enviar_para_exibidor(fqdn, port, msg)
+                vezes_enviada = 1
+
+        return sala_pb2.EnviaResponse(contador=vezes_enviada)
+
+    def _enviar_para_exibidor(self, fqdn, port, msg):
+        try:
+            with grpc.insecure_channel(f'{fqdn}:{port}') as channel:
+                stub = exibe_pb2_grpc.ExibeStub(channel)
+                stub.exibe(exibe_pb2.ExibeRequest(msg=msg, origem='Servidor'))
+        except Exception as e:
+            print(f'Erro ao enviar para exibidor {fqdn}:{port}: {e}')
+
+def serve():
+    if len(argv) != 2:
+        print(f"Uso: {argv[0]} porto")
+        return
+
+    porto = int(argv[1])
+
+    servidor = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    sala_pb2_grpc.add_SalaServicer_to_server(SalaServidor(), servidor)
+    servidor.add_insecure_port(f'[::]:{porto}')
+    servidor.start()
+    print("Servidor de Sala iniciado.")
+    servidor.wait_for_termination()
+
+if __name__ == "__main__":
+    serve()
+"""
+
+envia.py:
+"""
+import grpc
+import socket
+import sala_pb2
+import sala_pb2_grpc
+from sys import argv
+
+class Cliente:
+    def __init__(self, id_cliente, host, porto):
+        self.id_cliente = id_cliente
+        self.host = host
+        self.porto = porto
+        self.channel = grpc.insecure_channel(f'{host}:{porto}')
+        self.stub = sala_pb2_grpc.SalaStub(self.channel)
+
+    def registra_entrada(self):
+        return self.stub.registra_entrada(
+            sala_pb2.RegistraEntradaRequest(id=self.id_cliente)
+        )
+
+    def registra_saida(self, port):
+        fqdn = socket.getfqdn()
+
+        return self.stub.registra_saida(
+            sala_pb2.RegistraSaidaRequest(
+                id=self.id_cliente, fqdn=fqdn, port=port
+            )
+        )
+        # self.stub.registra_saida(sala_pb2.RegistraSaidaRequest(id=self.id_cliente, fqdn=fqdn, port=port))
+
+    def envia_mensagem(self, destino, mensagem):
+        return self.stub.envia(sala_pb2.EnviaRequest(
+            msg=mensagem, destino=destino)
+        )
+
+    def lista_usuarios(self):
+        return self.stub.lista(sala_pb2.Empty())
+
+    def finaliza_registro(self):
+        self.stub.finaliza_registro(sala_pb2.Empty())
+
+    def termina_servidor(self):
+        self.stub.termina(sala_pb2.Empty())
+
+    def processa_comandos(self):
+        try:
+            while True:
+                print('Comandos:')
+                print('- M,destino,mensagem: Envia uma mensagem para o destino') 
+                print('- L: Lista os programas registrados no servidor') 
+                print('- F: Finaliza um servidor de envio ou exibição específico') 
+                print('- T: Termina o servidor de mensagens') 
+                print('- sair')
+
+                comando = input('Comando: ')
+
+                if comando.startswith('M,'):
+                    _, destino, mensagem = comando.split(',', 2)
+                    resposta = self.envia_mensagem(destino, mensagem)
+                    print(f"Mensagem enviada {resposta.contador} vezes.")
+                elif comando == 'L':
+                    resposta = self.lista_usuarios()
+                    print("Usuários:", ', '.join(resposta.usuarios))
+                elif comando == 'F':
+                    self.finaliza_registro()
+                    break
+                elif comando == 'T':
+                    self.termina_servidor()
+                    break
+                elif comando == 'sair':
+                    break
+                else:
+                    print('Opção inválida!')
+        except KeyboardInterrupt:
+            print("Interrompido pelo usuário.")
+        finally:
+            self.finaliza_registro()
+            print("Registro finalizado.")
+
+def main():
+    if len(argv) != 4:
+        print(f'Uso: {argv[0]} id_cliente host port')
+        return
+
+    id_cliente = argv[1]
+    host = argv[2]
+    porto = int(argv[3])
+
+    cliente = Cliente(id_cliente, host, porto)
+
+    # Registrar a saída antes de registrar a entrada
+    resposta_saida = cliente.registra_saida(cliente.porto)
+    if resposta_saida.quantidade_programas == -1:
+        print("Erro: ID já registrado para saída.")
+        return
+
+    resposta_entrada = cliente.registra_entrada()
+    if resposta_entrada.quantidade_programas == -1:
+        print("Erro: ID já registrado para entrada.")
+        return
+
+    cliente.processa_comandos()
+
+if __name__ == '__main__':
+    main()
+"""
+
+exibe.py:
+"""
+import grpc
+import exibe_pb2
+import exibe_pb2_grpc
+from sys import argv
+from time import sleep
+from concurrent import futures
+
+class Exibe(exibe_pb2_grpc.ExibeServicer):
+    def __init__(self, id_cliente, porto_exibidor, host, porto_servidor):
+        self.id_cliente = id_cliente
+        self.porto_exibidor = porto_exibidor
+        self.host = host
+        self.porto_servidor = porto_servidor
+        self.is_terminado = False
+
+    def exibe(self, request, response):
+        # Exibir a mensagem recebida
+        print(f'Mensagem de {request.origem}: {request.msg}')
+
+        return exibe_pb2.ExibeResponse(response=0)
+    
+    def termina(self, request, response):
+        # Encerrar a execução do servidor
+        self.is_terminado = True
+        print("Servidor de exibição encerrando...")
+
+        return exibe_pb2.ExibeResponse(response=0)     
+
+def serve():
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+
+    # Verifica se o usuário colocou a quantidade correta de argumentos
+    if len(argv) != 5:
+        print(f"Uso: {argv[0]} id_cliente porto_exibidor host porto_servidor")
+        return
+
+    # Recebe as informações necessárias da linha de comando
+    id_cliente = argv[1]
+    porto_exibidor = int(argv[2])
+    host = argv[3]
+    porto_servidor = int(argv[4])
+
+    # Cria um objeto da classe Exibe
+    exibe = Exibe(id_cliente, porto_exibidor, host, porto_servidor)
+
+    exibe_pb2_grpc.add_ExibeServicer_to_server(exibe, server)
+
+    # Inicia um servidor com a porta fornecida pelo usuário
+    server.add_insecure_port(f'[::]:{exibe.porto_exibidor}')
+    server.start()
+    print("Servidor de exibição iniciado.")
+
+    try:
+        while not exibe.is_terminado:
+            # Mantém o servidor ativo
+            sleep(1)
+    except KeyboardInterrupt:
+        # Para o servidor caso o usuário queira
+        server.stop(0)
+
+if __name__ == "__main__":
+    serve()
+"""

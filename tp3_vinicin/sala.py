@@ -13,29 +13,22 @@ class SalaServidor(sala_pb2_grpc.SalaServicer):
     def registra_entrada(self, request, context):
         id = request.id
 
-        # Verifica se o ID existe e se é um cliente de entrada
-        if id in self.usuarios and self.usuarios[id][0] == 'entrada':
-            return sala_pb2.RegistraResponse(quantidade_programas=-1)
-        else:
-            self.usuarios[id] = ('entrada', None)
+        self.usuarios[id] = ('entrada', None)
 
-            return sala_pb2.RegistraResponse(
-                quantidade_programas=len(self.usuarios)
-            )
+        return sala_pb2.RegistraResponse(
+            quantidade_programas=len(self.usuarios)
+        )
 
     def registra_saida(self, request, context):
         id = request.id
         fqdn = request.fqdn
         port = request.port
 
-        # Verifica se o ID existe e se é um cliente de saída
-        if id in self.usuarios and self.usuarios[id][0] == 'saida':
-            return sala_pb2.RegistraResponse(quantidade_programas=-1)
-        else:
-            self.usuarios[id] = ('saida', (fqdn, port))
-            return sala_pb2.RegistraResponse(
-                quantidade_programas=len(self.usuarios)
-            )
+        self.usuarios[id] = ('saida', (fqdn, port))
+
+        return sala_pb2.RegistraResponse(
+            quantidade_programas=len(self.usuarios)
+        )
 
     def lista(self, request, context):
         usuarios = [id for id in self.usuarios]

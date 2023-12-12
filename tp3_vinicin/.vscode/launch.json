@@ -40,14 +40,6 @@
             "program": "${workspaceFolder}/exibe.py",
             "console": "integratedTerminal",
             "args": ["participante2", "6002", "localhost", "5000"]
-        },
-        {
-            "name": "Python: Exibição3",
-            "type": "python",
-            "request": "launch",
-            "program": "${workspaceFolder}/exibe.py",
-            "console": "integratedTerminal",
-            "args": ["participante3", "6003", "viniciusc", "5000"]
         }
     ],
     "compounds": [
@@ -58,8 +50,7 @@
                 "Python: Envio1", 
                 "Python: Envio2", 
                 "Python: Exibição1", 
-                "Python: Exibição2", 
-                "Python: Exibição3"
+                "Python: Exibição2"
             ]
         }
     ]

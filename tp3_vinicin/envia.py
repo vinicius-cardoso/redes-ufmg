@@ -86,12 +86,6 @@ def main():
 
     cliente = Cliente(id_cliente, host, porto)
 
-    # Registrar a saída antes de registrar a entrada
-    resposta_saida = cliente.registra_saida(cliente.porto)
-    if resposta_saida.quantidade_programas == -1:
-        print("Erro: ID já registrado para saída.")
-        return
-
     resposta_entrada = cliente.registra_entrada()
     if resposta_entrada.quantidade_programas == -1:
         print("Erro: ID já registrado para entrada.")

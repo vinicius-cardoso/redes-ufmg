@@ -1,6 +1,9 @@
 import grpc
+import socket
 import exibe_pb2
 import exibe_pb2_grpc
+import sala_pb2
+import sala_pb2_grpc
 from sys import argv
 from time import sleep
 from concurrent import futures
@@ -24,7 +27,23 @@ class Exibe(exibe_pb2_grpc.ExibeServicer):
         self.is_terminado = True
         print("Servidor de exibição encerrando...")
 
-        return exibe_pb2.ExibeResponse(response=0)     
+        return exibe_pb2.ExibeResponse(response=0)
+
+    def registra_saida(self):
+        with grpc.insecure_channel(f'{self.host}:{self.porto_servidor}') as channel:
+            stub = sala_pb2_grpc.SalaStub(channel)
+            try:
+                response = stub.registra_saida(
+                    sala_pb2.RegistraSaidaRequest(
+                        id=self.id_cliente, 
+                        fqdn=socket.getfqdn(), 
+                        port=self.porto_exibidor
+                    )
+                )
+                if response.quantidade_programas == -1:
+                    print("Erro: ID já registrado para saída.")
+            except grpc.RpcError as e:
+                print(f"Erro de RPC: {e.code()} - {e.details()}")
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
@@ -42,6 +61,7 @@ def serve():
 
     # Cria um objeto da classe Exibe
     exibe = Exibe(id_cliente, porto_exibidor, host, porto_servidor)
+    exibe.registra_saida()
 
     exibe_pb2_grpc.add_ExibeServicer_to_server(exibe, server)
 
