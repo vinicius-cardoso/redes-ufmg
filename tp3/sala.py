@@ -46,7 +46,9 @@ class SalaServidor(sala_pb2_grpc.SalaServicer):
         entrada_str = f', '.join(self.entradas)
         saida_str = f', '.join(self.saidas)
 
-        return sala_pb2.UserList(usuarios=f'Entrada: {entrada_str}\nSaída: {saida_str}')
+        return sala_pb2.UserList(
+            usuarios=f'Entrada: {entrada_str}\nSaída: {saida_str}'
+        )
 
     def finaliza_registro(self, request, context):
         cliente_id = self.processar_metadados(context.invocation_metadata())
@@ -81,14 +83,18 @@ class SalaServidor(sala_pb2_grpc.SalaServicer):
 
             with grpc.insecure_channel(f'{host}:{porta}') as channel:
                 stub = exibe_pb2_grpc.ExibeStub(channel)
-                response = stub.termina(exibe_pb2.ExibeResponse(terminado=True))
+                response = stub.termina(
+                    exibe_pb2.ExibeResponse(terminado=True)
+                )
 
     def envia(self, request, context):
         try:
             fqdn = self.processar_metadados(context.invocation_metadata())
 
             if request.destino == 'todos':
-                envios = sum(1 for _ in self.tentar_enviar_para_todos(request, fqdn))
+                envios = sum(
+                    1 for _ in self.tentar_enviar_para_todos(request, fqdn)
+                )
 
                 if envios != len(self.saidas):
                     return sala_pb2.EnviaResponse(contador=envios)
@@ -106,7 +112,8 @@ class SalaServidor(sala_pb2_grpc.SalaServicer):
     def tentar_enviar_para_todos(self, request, fqdn):
         for endereco in self.portas.values():
             if self.tentar_enviar(request, fqdn, endereco):
-                # produz um valor e pausa a função, retomando-a na próxima iteração
+                # produz um valor e pausa a função
+                # retomando-a na próxima iteração
                 yield 1
 
     def tentar_enviar(self, request, fqdn, endereco):
@@ -116,15 +123,19 @@ class SalaServidor(sala_pb2_grpc.SalaServicer):
         try:
             with grpc.insecure_channel(f'{host}:{porta}') as channel:
                 stub = exibe_pb2_grpc.ExibeStub(channel)
-                stub.exibe(exibe_pb2.ExibeRequest(msg=request.msg, origem=fqdn))
+                stub.exibe(exibe_pb2.ExibeRequest(
+                    msg=request.msg, origem=fqdn)
+                )
+
             return True
         except Exception as e:
             print(e)
+
             return False
 
 def iniciar_sala():
     if len(argv) != 2:
-        print(f"Uso: {argv[0]} porto")
+        print(f"Uso: {argv[0]} porta")
         return
 
     evento_parada = threading.Event()
