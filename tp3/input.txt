@@ -1,0 +1,5 @@
+python sala.py 5000
+python exibe.py exibidor1 5001 localhost 5000
+python exibe.py exibidor2 5002 localhost 5000
+python envia.py cliente1 localhost 5000
+python envia.py cliente2 localhost 5000

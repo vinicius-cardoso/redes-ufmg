@@ -10,28 +10,12 @@
             "args": ["5000"]
         },
         {
-            "name": "Python: Envio1",
-            "type": "python",
-            "request": "launch",
-            "program": "${workspaceFolder}/envia.py",
-            "console": "integratedTerminal",
-            "args": ["participante1", "localhost", "5000"]
-        },
-        {
-            "name": "Python: Envio2",
-            "type": "python",
-            "request": "launch",
-            "program": "${workspaceFolder}/envia.py",
-            "console": "integratedTerminal",
-            "args": ["participante2", "localhost", "5000"]
-        },
-        {
             "name": "Python: Exibição1",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/exibe.py",
             "console": "integratedTerminal",
-            "args": ["participante1", "6001", "localhost", "5000"]
+            "args": ["exibidor1", "5001", "localhost", "5000"]
         },
         {
             "name": "Python: Exibição2",
@@ -39,7 +23,23 @@
             "request": "launch",
             "program": "${workspaceFolder}/exibe.py",
             "console": "integratedTerminal",
-            "args": ["participante2", "6002", "localhost", "5000"]
+            "args": ["exibidor2", "5002", "localhost", "5000"]
+        },
+        {
+            "name": "Python: Envio1",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/envia.py",
+            "console": "integratedTerminal",
+            "args": ["cliente1", "localhost", "5000"]
+        },
+        {
+            "name": "Python: Envio2",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/envia.py",
+            "console": "integratedTerminal",
+            "args": ["cliente2", "localhost", "5000"]
         }
     ],
     "compounds": [
@@ -47,10 +47,10 @@
             "name": "Iniciar Todos os Scripts",
             "configurations": [
                 "Python: Sala", 
-                "Python: Envio1", 
-                "Python: Envio2", 
                 "Python: Exibição1", 
-                "Python: Exibição2"
+                "Python: Exibição2", 
+                "Python: Envio1", 
+                "Python: Envio2"
             ]
         }
     ]

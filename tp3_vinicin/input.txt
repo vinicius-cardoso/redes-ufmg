@@ -1,6 +1,0 @@
-python sala.py 5000
-python envia.py participante1 localhost 5000
-python envia.py participante2 localhost 5000
-python exibe.py participante1 6001 localhost 5000
-python exibe.py participante2 6002 localhost 5000
-python exibe.py participante3 6003 localhost 5000

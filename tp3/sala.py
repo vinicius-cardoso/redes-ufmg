@@ -1,86 +1,144 @@
-from sys import argv
-import grpc
-import sala_pb2 as chat
-import sala_pb2_grpc as rpc
-import exibe_pb2 as exibidor
-import exibe_pb2_grpc as exibidor_rpc
-from concurrent import futures
-import threading
+"""
+Autores:
+- Eduardo Henrique Basilio de Carvalho
+- Vinicius Cardoso Antunes
+"""
 
-class SalaServidor(rpc.salaServicer):
+import grpc
+import threading
+from sys import argv
+from concurrent.futures import ThreadPoolExecutor
+
+import sala_pb2
+import sala_pb2_grpc
+import exibe_pb2
+import exibe_pb2_grpc
+
+class SalaServidor(sala_pb2_grpc.SalaServicer):
     def __init__(self, evento_parada):
         self.entradas = []
-        self.saidas: {str: (str, str, str)} = {}
+        self.saidas = []
+        self.portas = {}
         self.evento_parada = evento_parada
 
     def registra_entrada(self, request, context):
         if request.id in self.entradas:
-            return -1
-        else:
-            self.entradas.append(request.id)
-            return len(self.entradas)
-    
+            return sala_pb2.RegistraResponse(quantidade_programas=-1)
+
+        self.entradas.append(request.id)
+
+        return sala_pb2.RegistraResponse(
+            quantidade_programas=len(self.entradas)
+        )
+
     def registra_saida(self, request, context):
         if request.id in self.saidas:
-            return -1
-        else:
-            endereco = '[::]:' + request.port
-            canal = grpc.insecure_channel(endereco)
-            conexao = exibidor_rpc.exibeStub(canal)
-            self.saidas[request.fqdn] = (endereco, conexao, request.id)
-            return len(self.saidas)
-    
+            return sala_pb2.RegistraResponse(quantidade_programas=-1)
+
+        self.saidas.append(request.id)
+        self.portas[request.id] = (request.port, request.fqdn)
+
+        return sala_pb2.RegistraResponse(
+            quantidade_programas=len(self.saidas)
+        )
+
     def lista(self, request, context):
-        ids_tipos = []
-        for id in self.entradas:
-            ids_tipos.append((id, "entrada"))
-        for (_, _, id) in self.saidas.values():
-            ids_tipos.append((id, "saidas"))
-        return ids_tipos
-    
+        entrada_str = f', '.join(self.entradas)
+        saida_str = f', '.join(self.saidas)
+
+        return sala_pb2.UserList(usuarios=f'Entrada: {entrada_str}\nSaída: {saida_str}')
+
     def finaliza_registro(self, request, context):
-        # enunciado manda remover registro de quem chamou
-        # a chamada não informa o id do cliente
-        # o registro só armazena o id do cliente (no caso de entradas)
-        return super().finaliza_registro(request, context)
-    
+        cliente_id = self.processar_metadados(context.invocation_metadata())
+
+        if cliente_id in self.entradas:
+            self.entradas.remove(cliente_id)
+
+            if cliente_id in self.saidas:
+                endereco, porta = self.portas[cliente_id]
+
+                self.saidas.remove(cliente_id)
+                self.portas.pop(cliente_id)
+
+                with grpc.insecure_channel(f'{endereco}:{porta}') as channel:
+                    stub = exibe_pb2_grpc.ExibeStub(channel)
+                    stub.termina(exibe_pb2.Empty())
+
+                return sala_pb2.TerminaResponse(terminado=True)
+            return sala_pb2.TerminaResponse(terminado=False)
+
+    def processar_metadados(self, context):
+        for key, value in context:
+            if key == 'id':
+                return value
+
     def termina(self, request, context):
-        for (_, conexao, _) in self.saidas.values():
-            conexao.termina()
         self.evento_parada.set()
-        return
-    
+
+        for value in self.portas.values():
+            host = value[1]
+            porta = value[0]
+
+            with grpc.insecure_channel(f'{host}:{porta}') as channel:
+                stub = exibe_pb2_grpc.ExibeStub(channel)
+                response = stub.termina(exibe_pb2.ExibeResponse(terminado=True))
+
     def envia(self, request, context):
-        envio = exibidor.mensagem()
-        envio.origem = context.peer()
-        envio.smensagem = request.msg
+        try:
+            fqdn = self.processar_metadados(context.invocation_metadata())
 
-        if request.destino == "todos":
-            for (_, conexao, _) in self.saidas.values():
-                conexao.exibe(envio)
-            qtd = len(self.saidas)
-        else:
-            destino = self.saidas.get(request.destino)
-            if destino:
-                destino[1].exibe(envio)
-                qtd = 1
-            else:
-                qtd = 0
-        return qtd
+            if request.destino == 'todos':
+                envios = sum(1 for _ in self.tentar_enviar_para_todos(request, fqdn))
 
-def main():
+                if envios != len(self.saidas):
+                    return sala_pb2.EnviaResponse(contador=envios)
+                else:
+                    return sala_pb2.EnviaResponse(contador=len(self.saidas))
+            elif request.destino in self.portas.keys():
+                self.tentar_enviar(request, fqdn, self.portas[request.destino])
+
+                return sala_pb2.EnviaResponse(contador=1)
+
+            return sala_pb2.EnviaResponse(contador=0)
+        except Exception as e:
+            return sala_pb2.EnviaResponse(contador=0)
+
+    def tentar_enviar_para_todos(self, request, fqdn):
+        for endereco in self.portas.values():
+            if self.tentar_enviar(request, fqdn, endereco):
+                # produz um valor e pausa a função, retomando-a na próxima iteração
+                yield 1
+
+    def tentar_enviar(self, request, fqdn, endereco):
+        host = endereco[1]
+        porta = endereco[0]
+        
+        try:
+            with grpc.insecure_channel(f'{host}:{porta}') as channel:
+                stub = exibe_pb2_grpc.ExibeStub(channel)
+                stub.exibe(exibe_pb2.ExibeRequest(msg=request.msg, origem=fqdn))
+            return True
+        except Exception as e:
+            print(e)
+            return False
+
+def iniciar_sala():
     if len(argv) != 2:
-        print(f"Uso: {argv[0]} numero_porto")
+        print(f"Uso: {argv[0]} porto")
         return
-
-    numero_porto = argv[1]
 
     evento_parada = threading.Event()
-    servidor = grpc.server(futures.ThreadPoolExecutor())
-    rpc.add_ChatServerServicer_to_server(SalaServidor(evento_parada), servidor)
-    servidor.add_insecure_port('[::]:' + numero_porto)
+    servidor = grpc.server(ThreadPoolExecutor(max_workers=10))
+
+    sala_servidor = SalaServidor(evento_parada)
+
+    sala_pb2_grpc.add_SalaServicer_to_server(sala_servidor, servidor)
+    servidor.add_insecure_port(f'[::]:{argv[1]}')
     servidor.start()
-    servidor.wait_for_termination()
-    servidor.stop(0)
+    evento_parada.wait()
+    servidor.stop(None)
+
+    exit()
+
 if __name__ == "__main__":
-    main()
+    iniciar_sala()

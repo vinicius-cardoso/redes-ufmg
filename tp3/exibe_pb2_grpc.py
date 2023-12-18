@@ -5,8 +5,9 @@ import grpc
 import exibe_pb2 as exibe__pb2
 
 
-class exibeStub(object):
-    """Missing associated documentation comment in .proto file."""
+class ExibeStub(object):
+    """Definição do serviço para o servidor de exibição
+    """
 
     def __init__(self, channel):
         """Constructor.
@@ -15,19 +16,20 @@ class exibeStub(object):
             channel: A grpc.Channel.
         """
         self.exibe = channel.unary_unary(
-                '/exibe.exibe/exibe',
-                request_serializer=exibe__pb2.mensagem.SerializeToString,
-                response_deserializer=exibe__pb2.Empty.FromString,
+                '/Exibe/exibe',
+                request_serializer=exibe__pb2.ExibeRequest.SerializeToString,
+                response_deserializer=exibe__pb2.ExibeResponse.FromString,
                 )
         self.termina = channel.unary_unary(
-                '/exibe.exibe/termina',
+                '/Exibe/termina',
                 request_serializer=exibe__pb2.Empty.SerializeToString,
-                response_deserializer=exibe__pb2.Empty.FromString,
+                response_deserializer=exibe__pb2.ExibeResponse.FromString,
                 )
 
 
-class exibeServicer(object):
-    """Missing associated documentation comment in .proto file."""
+class ExibeServicer(object):
+    """Definição do serviço para o servidor de exibição
+    """
 
     def exibe(self, request, context):
         """Missing associated documentation comment in .proto file."""
@@ -42,27 +44,28 @@ class exibeServicer(object):
         raise NotImplementedError('Method not implemented!')
 
 
-def add_exibeServicer_to_server(servicer, server):
+def add_ExibeServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'exibe': grpc.unary_unary_rpc_method_handler(
                     servicer.exibe,
-                    request_deserializer=exibe__pb2.mensagem.FromString,
-                    response_serializer=exibe__pb2.Empty.SerializeToString,
+                    request_deserializer=exibe__pb2.ExibeRequest.FromString,
+                    response_serializer=exibe__pb2.ExibeResponse.SerializeToString,
             ),
             'termina': grpc.unary_unary_rpc_method_handler(
                     servicer.termina,
                     request_deserializer=exibe__pb2.Empty.FromString,
-                    response_serializer=exibe__pb2.Empty.SerializeToString,
+                    response_serializer=exibe__pb2.ExibeResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'exibe.exibe', rpc_method_handlers)
+            'Exibe', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
 
  # This class is part of an EXPERIMENTAL API.
-class exibe(object):
-    """Missing associated documentation comment in .proto file."""
+class Exibe(object):
+    """Definição do serviço para o servidor de exibição
+    """
 
     @staticmethod
     def exibe(request,
@@ -75,9 +78,9 @@ class exibe(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/exibe.exibe/exibe',
-            exibe__pb2.mensagem.SerializeToString,
-            exibe__pb2.Empty.FromString,
+        return grpc.experimental.unary_unary(request, target, '/Exibe/exibe',
+            exibe__pb2.ExibeRequest.SerializeToString,
+            exibe__pb2.ExibeResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
@@ -92,8 +95,8 @@ class exibe(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_unary(request, target, '/exibe.exibe/termina',
+        return grpc.experimental.unary_unary(request, target, '/Exibe/termina',
             exibe__pb2.Empty.SerializeToString,
-            exibe__pb2.Empty.FromString,
+            exibe__pb2.ExibeResponse.FromString,
             options, channel_credentials,
             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
